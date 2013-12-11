@@ -10,4 +10,4 @@ app.config.update(
 
 db = SQLAlchemy(app)
 
-from app import views
+from helloworld import views
