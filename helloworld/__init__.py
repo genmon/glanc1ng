@@ -3,10 +3,7 @@ from flask.ext.sqlalchemy import SQLAlchemy
 
 # initialization
 app = Flask(__name__)
-app.config.update(
-	DEBUG = True,
-	#SQLALCHEMY_DATABASE_URI = os.environ['DATABASE_URL'],
-)
+app.config.from_object('config')
 
 db = SQLAlchemy(app)
 
