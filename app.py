@@ -1,5 +1,5 @@
 import os
-from flask import Flask
+from flask import Flask, render_template
 from flask.ext.sqlalchemy import SQLAlchemy
 
 # initialization
@@ -14,7 +14,7 @@ db = SQLAlchemy(app)
 # controllers
 @app.route("/")
 def hello():
-	return "Hello from Python!"
+	return render_template("index.html")
 
 # launch
 if __name__ == "__main__":
