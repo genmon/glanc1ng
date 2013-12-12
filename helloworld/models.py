@@ -1,7 +1,7 @@
 #>>> from yourapplication import db
 #>>> db.create_all()
 
-from helloworld import db
+from . import db
 
 ROLE_USER = 0
 ROLE_ADMIN = 1

@@ -6,3 +6,5 @@ http://blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-i-hello-world
 http://ryaneshea.com/lightweight-python-apps-with-flask-twitter-bootstrap-and-heroku
 http://blog.miguelgrinberg.com/post/flask-migrate-alembic-database-migration-wrapper-for-flask
 http://stackoverflow.com/questions/19323990/flask-migrate-not-creating-tables
+https://github.com/mattupstate/flask-social-example
+http://pythonhosted.org/Flask-Social/
