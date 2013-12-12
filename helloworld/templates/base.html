@@ -4,6 +4,17 @@
 	<title>{% block title %}{% endblock %}</title>
 	</head>
 	<body>
+	    {% with messages = get_flashed_messages() %}
+	    {% if messages %}
+		<div class="messages">
+	    <ul>
+	    {% for message in messages %}
+	        <li>{{ message }} </li>
+	    {% endfor %}
+	    </ul>
+		</div>
+	    {% endif %}
+	    {% endwith %}
 		<div class="content">
 			{% block content %}
 			{% endblock %}
