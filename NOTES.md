@@ -13,3 +13,6 @@ http://pythonhosted.org/Flask-Social/
 
 Install postgresapp.com
 
+# Twitter
+
+Don't forget to enable "Allow this application to be used to Sign in with Twitter" on the app at https://dev.twitter.com/apps
