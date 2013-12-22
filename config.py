@@ -26,3 +26,6 @@ SOCIAL_TWITTER = {
 	'consumer_secret': os.environ['TWITTER_CONSUMER_SECRET']
 }
 SOCIAL_APP_URL = "http://intense-bastion-3029.herokuapps.com/"
+SECURITY_LOGIN_URL = "/"
+SECURITY_TRACKABLE = True
+SECURITY_PASSWORD_HASH = 'bcrypt'

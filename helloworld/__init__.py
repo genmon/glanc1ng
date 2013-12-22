@@ -47,3 +47,4 @@ def on_login_failed(sender, provider, oauth_response):
 @app.errorhandler(SocialLoginError)
 def social_login_error(error):
 	return redirect(url_for('register', provider_id=error.provider.id, login_failed=1))
+

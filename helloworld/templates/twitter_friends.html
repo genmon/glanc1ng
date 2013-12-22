@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block title %}Twitter Friends{% endblock %}
+{% block content %}
+
+<ol>
+{% for friend in twitter_friends %}
+	<li>{{ friend }}</li>
+{% endfor %}
+</ol>
+
+{% endblock %}

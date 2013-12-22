@@ -1,0 +1,35 @@
+{% from "_macros.html" import render_field %}
+{% extends "base.html" %}
+
+{% block title %}Group{% endblock %}
+{% block content %}
+
+<h1>Group</h1>
+
+<h2>These are the people you are looking at</h2>
+
+{% if lookin_at %}
+<ul>
+	{% for group_member in lookin_at %}
+		<li>
+			{{ group_member.looking_at_twitter_display_name|safe }}
+			<form method="POST" action="{{ url_for('group_member_remove', member=group_member.looking_at_twitter_display_name[1:]) }}">
+				{{ remove_form.hidden_tag() }}
+				<input type="submit" value="Remove">
+			</form>
+		</li>
+	{% endfor %}
+</ul>
+{% else %}
+<em>You aren't looking at anyone</em>
+{% endif %}
+
+<h2>Add someone</h2>
+
+<form method="POST">
+	{{ add_form.hidden_tag() }}
+	{{ render_field(add_form.twitter_display_name) }}
+    <input type="submit" value="Add">
+</form>
+
+{% endblock %}

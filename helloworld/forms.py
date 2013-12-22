@@ -1,36 +1,18 @@
 
 from flask import current_app
-from flask.ext.wtf import (Form, TextField, PasswordField, Required, Email,
-							Length, Regexp, ValidationError, EqualTo)
-
-
-class UniqueUser(object):
-	def __init__(self, message="User exists"):
-		self.message = message
-    
-	def __call__(self, form, field):
-		if current_app.security.datastore.find_user(email=field.data):
-			raise ValidationError(self.message)
-
+from flask_wtf import Form
+from wtforms import TextField, validators
 
 validators = {
-	'email': [
-		Required(),
-		Email(),
-		UniqueUser(message='Email address is associated with '
-							'an existing account')
-	],
-	'password': [
-		Required(),
-		Length(min=6, max=50),
-		EqualTo('confirm', message='Passwords must match'),
-		Regexp(r'[A-Za-z0-9@#$%^&+=]',
-			message='Password contains invalid characters')
+	'twitter_display_name': [
+		validators.Required(),
+		validators.Length(min=2, max=16),
+		validators.Regexp(r'^@[a-zA-Z0-9_]{1,15}$', message='Twitter handles start with @ and then have only letters, numbers and underscores')
 	]
 }
 
+class AddGroupMemberForm(Form):
+	twitter_display_name = TextField('twitter_display_name', validators['twitter_display_name'], default='@twitter_name')
 
-class RegisterForm(Form):
-	email = TextField('Email', validators['email'])
-	password = PasswordField('Password', validators['password'], )
-	confirm = PasswordField('Confirm Password')
+class RemoveGroupMemberForm(Form):
+	pass
