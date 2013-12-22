@@ -9,7 +9,7 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 
 if os.environ.get('DATABASE_URL') is None:
 	#SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(basedir, 'app.db')
-	SQLALCHEMY_DATABASE_URI = 'postgres://localhost/helloworld_db'
+	SQLALCHEMY_DATABASE_URI = 'postgres://localhost/glanc1ng_db'
 else:
 	SQLALCHEMY_DATABASE_URI = os.environ['DATABASE_URL']
 
@@ -25,7 +25,7 @@ SOCIAL_TWITTER = {
 	'consumer_key': os.environ['TWITTER_CONSUMER_KEY'],
 	'consumer_secret': os.environ['TWITTER_CONSUMER_SECRET']
 }
-SOCIAL_APP_URL = "http://intense-bastion-3029.herokuapps.com/"
+SOCIAL_APP_URL = "http://www.glanc1ng.com/"
 SECURITY_LOGIN_URL = "/"
 SECURITY_TRACKABLE = True
 SECURITY_PASSWORD_HASH = 'bcrypt'
