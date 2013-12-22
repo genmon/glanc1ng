@@ -3,10 +3,18 @@
 {% block title %}do_glance_DEBUG{% endblock %}
 {% block content %}
 
-<h1>Who will receive this glance</h1>
+<h1>Who WILL receive this glance</h1>
 
 <ul>
-{% for r in receivers %}
+{% for r in will_receive %}
+	<li>{{ r|safe }}</li>
+{% endfor %}
+</ul>
+
+<h1>Who WONT receive this glance</h1>
+
+<ul>
+{% for r in wont_receive %}
 	<li>{{ r|safe }}</li>
 {% endfor %}
 </ul>

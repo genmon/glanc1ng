@@ -4,7 +4,7 @@ from flask.ext.social.views import connect_handler
 from flask.ext.social.utils import get_provider_or_404
 
 from forms import AddGroupMemberForm, RemoveGroupMemberForm, DoGlanceForm
-from models import WhoYouLookinAt
+from models import WhoYouLookinAt, Connection
 
 from . import app, db
 
@@ -107,15 +107,31 @@ def group_member_remove(member=None):
 @login_required
 def do_glance():
 	glance_form = DoGlanceForm()
+	twitter_conn = app.social.twitter.get_connection()
 	
-	receivers = []
+	will_receive = []
+	wont_receive = []
 	if request.method == 'POST' and glance_form.validate():
 		# record noticed glances here
 		for receiver in current_user.who_they_lookin_at:
-			receivers.append(receiver.looking_at_twitter_display_name)
-			# @todo do the work
+			# is the receiver (a) signed up and (b) looking at the sender?
+			notice = False
+			receiver_conn = Connection().query.filter_by(
+				display_name=receiver.looking_at_twitter_display_name).first()
+			if receiver_conn is not None:
+				will_notice = [x.looking_at_twitter_display_name for x in receiver_conn.user.who_they_lookin_at]
+				if twitter_conn.display_name in will_notice:
+					notice = True
+			
+			if notice is True:
+				will_receive.append(receiver.looking_at_twitter_display_name)
+				
+				# @todo record the glance
+				
+			else:
+				wont_receive.append(receiver.looking_at_twitter_display_name)
 
-	return render_template("do_glance_DEBUG.html", receivers=receivers)
+	return render_template("do_glance_DEBUG.html", will_receive=will_receive, wont_receive=wont_receive)
 
 @app.route("/list_glances")
 @login_required
