@@ -5,4 +5,9 @@
 
 Hello World! (3)
 
+<form method="POST" action="{{ url_for('do_glance') }}">
+	{{ glance_form.hidden_tag() }}
+	<input type="submit" value="Glance">
+</form>
+
 {% endblock %}

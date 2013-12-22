@@ -3,18 +3,20 @@ from flask.ext.security import login_required, current_user, login_user
 from flask.ext.social.views import connect_handler
 from flask.ext.social.utils import get_provider_or_404
 
-from forms import AddGroupMemberForm, RemoveGroupMemberForm
+from forms import AddGroupMemberForm, RemoveGroupMemberForm, DoGlanceForm
 from models import WhoYouLookinAt
 
 from . import app, db
 
-@app.route("/")
 @app.route("/index")
+@app.route("/")
 def index():
 	if current_user.is_authenticated() is False:
 		return render_template("index_signed_out.html")
-		
-	return render_template("index.html", current_user=current_user)
+	
+	glance_form = DoGlanceForm()
+	
+	return render_template("index.html", glance_form=glance_form)
 
 @app.route("/test")
 @login_required
@@ -101,3 +103,21 @@ def group_member_remove(member=None):
 		
 	return redirect(url_for('group'))
 
+@app.route("/do_glance", methods=['POST'])
+@login_required
+def do_glance():
+	glance_form = DoGlanceForm()
+	
+	receivers = []
+	if request.method == 'POST' and glance_form.validate():
+		# record noticed glances here
+		for receiver in current_user.who_they_lookin_at:
+			receivers.append(receiver.looking_at_twitter_display_name)
+			# @todo do the work
+
+	return render_template("do_glance_DEBUG.html", receivers=receivers)
+
+@app.route("/list_glances")
+@login_required
+def list_glances():
+	return render_template("list_glances.html")

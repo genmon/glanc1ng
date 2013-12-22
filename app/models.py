@@ -32,6 +32,7 @@ class User(db.Model, UserMixin):
 	connections = db.relationship('Connection',
 		backref=db.backref('user', lazy='joined'), cascade="all")
 	who_they_lookin_at = db.relationship('WhoYouLookinAt', backref=db.backref('users', lazy='joined'))
+	noticed_glances = db.relationship('NoticedGlances', backref=db.backref('users', lazy='joined'))
 
 	def __repr__(self):
 		return '<User %r>' % (self.email)
@@ -53,6 +54,14 @@ class Connection(db.Model):
 	rank = db.Column(db.Integer)
 
 class WhoYouLookinAt(db.Model):
+	""" When a user makes their group, what they are saying is:
+	
+	1. When I glance, SEND the glance at these people
+	2. When any of these people glance, make sure I notice it
+	
+	There is no requirement that any of the people in the group
+	are signed up on the system, so we don't have their user IDs.
+	"""
 	
 	__tablename__ = "whoyoulookinat"
 	__table_args__ = (db.UniqueConstraint('user_id', 'looking_at_twitter_display_name'),)
@@ -60,6 +69,28 @@ class WhoYouLookinAt(db.Model):
 	user_id = db.Column(db.Integer, db.ForeignKey('users.id'), primary_key=True)
 	looking_at_twitter_display_name = db.Column(db.String(255), primary_key=True)
 
+class NoticedGlances(db.Model):
+	""" When a user makes a glance, they're definitely signed up. And
+	since SENT glances are only noticed and recorded if the RECEIVER
+	happens to be looking in that direction, we know that the RECEIVER
+	is signed up too.
+	
+	This table is used by a user to show how many glances they have
+	received. But by the time the receiver logs in, the sender might
+	not be on the system any longer.
+	
+	So for noticed glances:
+	
+	- for every RECEIVER user_id
+	- we store a list of SENDER twitter display names
+	"""
+
+	__tablename__ = "noticed_glances"
+	__table_args__ = (db.UniqueConstraint('receiver_user_id', 'sender_twitter_display_name'),)
+	
+	receiver_user_id = db.Column(db.Integer, db.ForeignKey('users.id'), primary_key=True)
+	sender_twitter_display_name = db.Column(db.String(255), primary_key=True)
+	when = db.Column(db.DateTime())
 
 """
 class Glance(db.Model):

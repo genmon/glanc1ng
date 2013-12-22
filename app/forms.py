@@ -16,3 +16,6 @@ class AddGroupMemberForm(Form):
 
 class RemoveGroupMemberForm(Form):
 	pass
+
+class DoGlanceForm(Form):
+	pass

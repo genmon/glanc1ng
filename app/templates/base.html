@@ -5,7 +5,10 @@
 	</head>
 	<body>
 		{% if current_user.is_authenticated() %}
-			Signed in! <a href="/logout">Sign out</a>
+			<a href="{{ url_for('index') }}">Home</a>
+			<a href="{{ url_for('list_glances') }}">Glances at me</a>
+			<a href="{{ url_for('group') }}">Edit group</a>
+			<a href="/logout">Sign out</a>
 			<hr />
 		{% endif %}
 		
