@@ -11,6 +11,9 @@ from . import app, db
 @app.route("/")
 @app.route("/index")
 def index():
+	if current_user.is_authenticated() is False:
+		return render_template("index_signed_out.html")
+		
 	return render_template("index.html", current_user=current_user)
 
 @app.route("/test")
@@ -79,7 +82,7 @@ def group():
 			flash('You added a member to your group!')
 	return render_template("group.html", lookin_at=current_user.who_they_lookin_at, add_form=add_form, remove_form=remove_form)
 
-@app.route("/route/<member>/remove", methods=['POST'])
+@app.route("/group/<member>/remove", methods=['POST'])
 @login_required
 def group_member_remove(member=None):
 	if not member:

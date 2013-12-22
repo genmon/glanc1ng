@@ -2,11 +2,7 @@
 
 {% block title %}Home{% endblock %}
 {% block content %}
-Hello World! (2)
 
-{% if current_user.is_authenticated() %}Logged in! <a href="/logout">Log out</a>{% endif %}
+Hello World! (3)
 
-<form action="{{ url_for('social.login', provider_id='twitter') }}" method="POST">
-  <button type="submit">Sign in with Twitter</button>
-</form>
 {% endblock %}

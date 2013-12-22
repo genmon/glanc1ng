@@ -4,7 +4,13 @@
 	<title>{% block title %}{% endblock %}</title>
 	</head>
 	<body>
-	    {% with messages = get_flashed_messages() %}
+		{% if current_user.is_authenticated() %}
+			Signed in! <a href="/logout">Sign out</a>
+			<hr />
+		{% endif %}
+		
+		{% with messages = get_flashed_messages() %}
+		
 	    {% if messages %}
 		<div class="messages">
 	    <ul>
@@ -14,6 +20,7 @@
 	    </ul>
 		</div>
 	    {% endif %}
+	
 	    {% endwith %}
 		<div class="content">
 			{% block content %}
