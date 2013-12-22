@@ -32,7 +32,7 @@ class User(db.Model, UserMixin):
 	connections = db.relationship('Connection',
 		backref=db.backref('user', lazy='joined'), cascade="all")
 	who_they_lookin_at = db.relationship('WhoYouLookinAt', backref=db.backref('users', lazy='joined'))
-	noticed_glances = db.relationship('NoticedGlances', backref=db.backref('users', lazy='joined'))
+	noticed_glances = db.relationship('NoticedGlance', backref=db.backref('users', lazy='joined'))
 
 	def __repr__(self):
 		return '<User %r>' % (self.email)
@@ -69,7 +69,7 @@ class WhoYouLookinAt(db.Model):
 	user_id = db.Column(db.Integer, db.ForeignKey('users.id'), primary_key=True)
 	looking_at_twitter_display_name = db.Column(db.String(255), primary_key=True)
 
-class NoticedGlances(db.Model):
+class NoticedGlance(db.Model):
 	""" When a user makes a glance, they're definitely signed up. And
 	since SENT glances are only noticed and recorded if the RECEIVER
 	happens to be looking in that direction, we know that the RECEIVER
@@ -85,30 +85,10 @@ class NoticedGlances(db.Model):
 	- we store a list of SENDER twitter display names
 	"""
 
-	__tablename__ = "noticed_glances"
+	__tablename__ = "noticed_glance"
 	__table_args__ = (db.UniqueConstraint('receiver_user_id', 'sender_twitter_display_name'),)
 	
 	receiver_user_id = db.Column(db.Integer, db.ForeignKey('users.id'), primary_key=True)
 	sender_twitter_display_name = db.Column(db.String(255), primary_key=True)
 	when = db.Column(db.DateTime())
 
-"""
-class Glance(db.Model):
-	
-	__tablename__ = "glances"
-	
-	# A user glances in the directions of several other users
-	# In the interface we call these friends.
-	
-	# When a user glances at another user, that glance is only
-	# recorded if the user is looking back at them
-	
-	sending_user_id = db.Column(db.Integer, db.ForeignKey('users.id'), primary_key=True)
-	receiving_user_id = db.Column(db.Integer, db.ForeignKey('users.id'), primary_key=True)
-	last_glance_made_at = db.Column(db.DateTime())
-	last_glance_noticed_at = db.Column(db.DateTime())
-	
-	sending_user = db.relationship("User", foreign_keys=[sending_user_id], backref="sends_glances_to")
-	receiving_user = db.relationship("User", foreign_keys=[receiving_user_id], backref="receives_glances_from")
-"""
-	

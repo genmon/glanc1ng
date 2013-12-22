@@ -4,9 +4,11 @@ from flask.ext.social.views import connect_handler
 from flask.ext.social.utils import get_provider_or_404
 
 from forms import AddGroupMemberForm, RemoveGroupMemberForm, DoGlanceForm
-from models import WhoYouLookinAt, Connection
+from models import WhoYouLookinAt, Connection, NoticedGlance
 
 from . import app, db
+
+import datetime
 
 @app.route("/index")
 @app.route("/")
@@ -127,7 +129,23 @@ def do_glance():
 				will_receive.append(receiver.looking_at_twitter_display_name)
 				
 				# @todo record the glance
-				
+				#receiver_user_id
+				#sender_twitter_display_name
+				glance = NoticedGlance().query.filter_by(
+					receiver_user_id = receiver_conn.user_id,
+					sender_twitter_display_name = twitter_conn.display_name
+					).first()
+				if glance is not None:
+					glance.when = datetime.datetime.utcnow()
+					db.session.merge(glance)
+					db.session.commit()
+				else:
+					glance = NoticedGlance(
+						receiver_user_id = receiver_conn.user_id,
+						sender_twitter_display_name = twitter_conn.display_name,
+						when = datetime.datetime.utcnow())
+					db.session.add(glance)
+					db.session.commit()
 			else:
 				wont_receive.append(receiver.looking_at_twitter_display_name)
 
