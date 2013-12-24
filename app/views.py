@@ -160,7 +160,8 @@ def list_glances():
 	
 	received_glances = []
 	lookin_at = [x.looking_at_twitter_display_name for x in current_user.who_they_lookin_at]
+	noticed = dict( [(n.sender_twitter_display_name, n.when) for n in current_user.noticed_glances] )
 	for sender in lookin_at:
-		received_glances.append( (sender, None) )
+		received_glances.append( (sender, noticed.get(sender)) )
 	
 	return render_template("list_glances.html", received_glances=received_glances)
