@@ -7,9 +7,13 @@ from flask.ext.security import Security, SQLAlchemyUserDatastore
 from flask.ext.social import Social, SQLAlchemyConnectionDatastore, login_failed
 from flask.ext.social.utils import get_connection_values_from_oauth_response
 
+from flask_bootstrap import Bootstrap
+
 # initialization
 app = Flask(__name__)
 app.config.from_object('config')
+
+Bootstrap(app)
 
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)

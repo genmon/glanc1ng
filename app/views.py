@@ -76,9 +76,9 @@ def group():
 		test = WhoYouLookinAt.query.filter_by(user_id=current_user.id, looking_at_twitter_display_name=add_form.twitter_display_name.data).first()
 		twitter_conn = app.social.twitter.get_connection()
 		if test is not None:
-			flash('That member is already in your group!')
+			flash('That member is already in your group!', 'error')
 		elif add_form.twitter_display_name.data.lower() == twitter_conn.display_name.lower():
-			flash('You can\'t add yourself!')
+			flash('You can\'t add yourself!', 'error')
 		else:
 			new_group_member = WhoYouLookinAt(user_id=current_user.id, looking_at_twitter_display_name=add_form.twitter_display_name.data)
 			db.session.add(new_group_member)
@@ -154,4 +154,13 @@ def do_glance():
 @app.route("/list_glances")
 @login_required
 def list_glances():
-	return render_template("list_glances.html")
+	""" Displays a list of [(from, when),]
+	where _when_ is None if a glance has have been received.
+	"""
+	
+	received_glances = []
+	lookin_at = [x.looking_at_twitter_display_name for x in current_user.who_they_lookin_at]
+	for sender in lookin_at:
+		received_glances.append( (sender, None) )
+	
+	return render_template("list_glances.html", received_glances=received_glances)

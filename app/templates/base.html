@@ -1,33 +1,55 @@
-<!DOCTYPE html>
-<html lang="en">
-	<head>
-	<title>{% block title %}{% endblock %}</title>
-	</head>
-	<body>
+{% extends "bootstrap/base.html" %}
+
+{% block navbar %}
+<nav class="navbar navbar-default" role="navigation">
+	<!-- Brand and toggle get grouped for better mobile display -->
+	<div class="navbar-header">
+		<button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+			<span class="sr-only">Toggle navigation</span>
+			<span class="icon-bar"></span>
+			<span class="icon-bar"></span>
+			<span class="icon-bar"></span>
+		</button>
+	<a class="navbar-brand" href="{{ url_for('index') }}">Glanc1ng</a>
+	</div>
+
+	<!-- Collect the nav links, forms, and other content for toggling -->
+	<div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
 		{% if current_user.is_authenticated() %}
-			<a href="{{ url_for('index') }}">Home</a>
-			<a href="{{ url_for('list_glances') }}">Glances at me</a>
-			<a href="{{ url_for('group') }}">Edit group</a>
-			<a href="/logout">Sign out</a>
-			<hr />
+		<ul class="nav navbar-nav">
+			<li><a href="{{ url_for('list_glances') }}">Glances at me</a></li>
+			<li><a href="{{ url_for('group') }}">Edit group</a></li>
+		</ul>
+		<ul class="nav navbar-nav navbar-right">
+			<li><a href="/logout">Sign out</a></li>
+		</ul>
 		{% endif %}
-		
-		{% with messages = get_flashed_messages() %}
-		
-	    {% if messages %}
-		<div class="messages">
-	    <ul>
-	    {% for message in messages %}
-	        <li>{{ message }} </li>
-	    {% endfor %}
-	    </ul>
-		</div>
-	    {% endif %}
+	</div><!-- /.navbar-collapse -->
+	</nav>
+{% endblock %}
+
+{% block content %}
+	<div class="container">
+	{% with messages = get_flashed_messages(with_categories=True) %}
+		{% if messages %}
+			{% for category, message in messages %}
+				<div class="alert {% if category == 'error' %}alert-danger{% else %}alert-success{% endif %}">
+					{{ message }}
+				</div>
+			{% endfor %}
+		{% endif %}
+	{% endwith %}
 	
-	    {% endwith %}
-		<div class="content">
-			{% block content %}
-			{% endblock %}
+	{% block regularpage %}
+	{% endblock %}
+	</div>
+
+	<div id="footer">
+		<div class="container">
+			<p>&nbsp;</p>
+			<p class="text-muted">
+				Glanc1ng is by Matt Webb/<a href="https://twitter.com/genmon">@genmon</a>. Follow <a href="https://twitter.com/glanc1ng">@glanc1ng</a> for updates. Feedback to <a href="mailto:matt@interconnected.org">matt@interconnected.org</a>. I'm ok, you're ok.
+			</p>
 		</div>
-	</body>
-</html>
+	</div>
+{% endblock %}

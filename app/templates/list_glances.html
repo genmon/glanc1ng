@@ -1,10 +1,22 @@
 {% extends "base.html" %}
 
 {% block title %}Glances at me{% endblock %}
-{% block content %}
+{% block regularpage %}
 
 <h1>Glances at me</h1>
 
-@todo
+{% if received_glances %}
+
+<ul>
+	{% for sender, when in received_glances %}
+	<li>{{ sender }}: {{ when }}</li>
+	{% endfor %}
+</ul>
+
+{% else %}
+
+<p>You have no-one in your group.</p>
+
+{% endif %}
 
 {% endblock %}

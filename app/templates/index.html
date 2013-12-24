@@ -1,9 +1,9 @@
 {% extends "base.html" %}
 
 {% block title %}Home{% endblock %}
-{% block content %}
+{% block regularpage %}
 
-Hello World! (3)
+<h1>Glancing</h1>
 
 <form method="POST" action="{{ url_for('do_glance') }}">
 	{{ glance_form.hidden_tag() }}
