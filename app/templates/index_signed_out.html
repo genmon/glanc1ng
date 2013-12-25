@@ -2,11 +2,15 @@
 
 {% block title %}Glanc1ng{% endblock %}
 
+{% block navbar %}
+<nav class="navbar" role="navigation"></nav>
+{% endblock %}
+
 {% block regularpage %}
 
 <div class="jumbotron">
 	<h1>I&rsquo;m ok, you&rsquo;re ok :)</h1>
-	<p>Glanc1ng is an online experiment in <strong>eye contact</strong> and <strong>small groups.</strong></p>
+	<p>Glanc1ng is an online experiment in eye contact and small groups.</p>
 <form action="{{ url_for('social.login', provider_id='twitter') }}" method="POST">
   <button class="btn btn-primary btn-lg" type="submit">Sign in with Twitter</button>
 </form>
@@ -14,30 +18,10 @@
 
 <h3>What will happen when I sign in?</h3>
 
-<p>After you sign in, you'll be asked to list a few Twitter handles -- these could be close friends, coworkers, or maybe a loved one. This is your group. Then every time you visit this site, you can glance at your group. When you do, you'll see when each of them last glanced at you. And so on, back and forth.</p>
+<p>After you sign in, you'll be asked to list a few Twitter handles -- these could be close friends, coworkers, or maybe a loved one. This is your group. Then every time you visit this site, you can glance at your group. When you do, you'll see when each of them last glanced at you. They can do the same. And so on, back and forth.</p>
 
 <h3>Is that it?</h3>
 
-<p>Yes. Sorta. Kinda. It's minimal. Glanc1ng is a work in progress, and there's more to come.</p>
-
-<p>Primarily this is an experiment in small group dynamics, and working with the smallest - almost ambiguous - possible unit of interaction: Eye contact. Can we use glancing (or Glanc1ng) to strengthen existing social relationships? To choose when to have lunch together, without overt planning? For togetherness? To build intimacy in the crowded social networks, and warmth in the individual isolation of the inbox? Dunno. Let's see what happens, and I'll build more features as they occur to me.</p>
-
-<h3>What is a glance?</h3>
-
-<p>A glance is...</p>
-
-<ul>
-	<li>Pleasant: It's nice to discover that two of you have glanced at one-another recently.</li>
-	<li>Reciprocal: The only way to see whether someone has glanced at you is to glance at them.</li>
-	<li>Polite by default: You won't notice glances from a person unless you've actively add them to your group. And if you add a person, they won't be prompted to add you back.</li>
-</ul>
-
-<h3>How come the Twitter thing?</h3>
-
-<p>Twitter provides sign-in. It's easier than building a login system just for this. Glanc1ng doesn't read your tweets, and won't tweet on your behalf. In the future, Glanc1ng might look at your friends list in order to provide autocomplete when you're creating your group.</p>
-
-<h3>What's the history?</h3>
-
-<p>I'm Matt Webb. You can find me at <a href="https://twitter.com/genmon">@genmon</a>. Way back in 2003/4, I wrote the very first version of this software and <a href="http://glancing.interconnected.org/2004/02/etcon/">gave a talk about it</a> (<a href="http://interconnected.org/notes/2003/09/glancing/">more notes</a>). This re-imagination - and first public version - is for me to celebrate 10 years since that talk at the O'Reilly Emerging Technology Conference on 11 February 2004. Timequake! Also so I can remember how to code. It's been a while.</p>
+<p>Yes. Sorta. Kinda. It's minimal. Glanc1ng is a work in progress, and there's more to come. <strong><a href="{{ url_for("about") }}">Learn more!</a></strong></p>
 
 {% endblock %}

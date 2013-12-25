@@ -1,5 +1,10 @@
 {% extends "bootstrap/base.html" %}
 
+{% block styles %}
+{{super()}}
+<link rel="stylesheet" href="{{url_for('static', filename='sticky-footer.css')}}">
+{% endblock %}
+
 {% block navbar %}
 <nav class="navbar navbar-default" role="navigation">
 	<!-- Brand and toggle get grouped for better mobile display -->
@@ -21,6 +26,7 @@
 			<li><a href="{{ url_for('group') }}">Edit group</a></li>
 		</ul>
 		<ul class="nav navbar-nav navbar-right">
+			<li><a href="/about">About</a></li>
 			<li><a href="/logout">Sign out</a></li>
 		</ul>
 		{% endif %}
@@ -29,6 +35,7 @@
 {% endblock %}
 
 {% block content %}
+<div id="wrap">
 	<div class="container">
 	{% with messages = get_flashed_messages(with_categories=True) %}
 		{% if messages %}
@@ -42,14 +49,20 @@
 	
 	{% block regularpage %}
 	{% endblock %}
+	
+	<p>&nbsp;</p>
+	
 	</div>
+</div>
 
-	<div id="footer">
-		<div class="container">
-			<p>&nbsp;</p>
-			<p class="text-muted">
-				Glanc1ng is by Matt Webb/<a href="https://twitter.com/genmon">@genmon</a>. Follow <a href="https://twitter.com/glanc1ng">@glanc1ng</a> for updates. Feedback to <a href="mailto:matt@interconnected.org">matt@interconnected.org</a>. I'm ok, you're ok.
-			</p>
-		</div>
+<div id="push"></div>
+
+<div id="footer">
+	<div class="container">
+		<p>&nbsp;</p>
+		<p class="text-muted">
+			Glanc1ng is by Matt Webb/<a href="https://twitter.com/genmon">@genmon</a>. Follow <a href="https://twitter.com/glanc1ng">@glanc1ng</a> for updates. Feedback to <a href="mailto:matt@interconnected.org">matt@interconnected.org</a>. I'm ok, you're ok.
+		</p>
 	</div>
+</div>
 {% endblock %}

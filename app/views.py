@@ -165,3 +165,8 @@ def list_glances():
 		received_glances.append( (sender, noticed.get(sender)) )
 	
 	return render_template("list_glances.html", received_glances=received_glances)
+
+@app.route("/about")
+def about():
+	return render_template("about.html")
+	
