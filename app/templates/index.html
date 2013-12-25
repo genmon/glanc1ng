@@ -3,6 +3,9 @@
 {% block title %}Home{% endblock %}
 {% block regularpage %}
 
+
+<img class="img-responsive" src="{{ url_for('static', filename='eye/0.gif') }}" width="440" height="440">
+
 <h1>Glancing</h1>
 
 <form method="POST" action="{{ url_for('do_glance') }}">

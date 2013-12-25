@@ -3,15 +3,27 @@
 {% block title %}Glances at me{% endblock %}
 {% block regularpage %}
 
-<h1>Glances at me</h1>
+<h1>Glances in your group</h1>
 
 {% if received_glances %}
 
-<ul>
+<table class="table">
 	{% for sender, when in received_glances %}
-	<li>{{ sender }}: {{ when }}</li>
+	<tr>
+		<td>{{ sender }}</td>
+		<td>{{ when }}</td>
+	</tr>
 	{% endfor %}
-</ul>
+	<tr>
+		<td>{{ current_user_twitter_display_name }}</td>
+		<td>You last glanced just now</td>
+	</tr>
+</table>
+
+<form method="POST" action="{{ url_for('do_glance') }}">
+	{{ glance_form.hidden_tag() }}
+	<input type="submit" value="Glance again">
+</form>
 
 {% else %}
 

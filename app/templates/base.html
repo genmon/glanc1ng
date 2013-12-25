@@ -3,6 +3,7 @@
 {% block styles %}
 {{super()}}
 <link rel="stylesheet" href="{{url_for('static', filename='sticky-footer.css')}}">
+<link rel="stylesheet" href="{{url_for('static', filename='disable-img-smoothing.css')}}">
 {% endblock %}
 
 {% block navbar %}
@@ -22,7 +23,6 @@
 	<div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
 		{% if current_user.is_authenticated() %}
 		<ul class="nav navbar-nav">
-			<li><a href="{{ url_for('list_glances') }}">Glances at me</a></li>
 			<li><a href="{{ url_for('group') }}">Edit group</a></li>
 		</ul>
 		<ul class="nav navbar-nav navbar-right">

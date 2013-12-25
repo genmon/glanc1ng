@@ -7,6 +7,7 @@ from forms import AddGroupMemberForm, RemoveGroupMemberForm, DoGlanceForm
 from models import WhoYouLookinAt, Connection, NoticedGlance
 
 from . import app, db
+from helpers import time_ago_human_readable
 
 import datetime
 
@@ -56,7 +57,7 @@ def register(provider_id=None):
 
 	return abort(404)
 
-@app.route("/twitter_friends")
+#@app.route("/twitter_friends")
 @login_required
 def twitter_friends():
 	twitter_api = get_provider_or_404('twitter').get_api()
@@ -149,6 +150,9 @@ def do_glance():
 			else:
 				wont_receive.append(receiver.looking_at_twitter_display_name)
 
+	session['glance_done'] = True
+	return redirect(url_for("list_glances"))
+
 	return render_template("do_glance_DEBUG.html", will_receive=will_receive, wont_receive=wont_receive)
 
 @app.route("/list_glances")
@@ -158,13 +162,22 @@ def list_glances():
 	where _when_ is None if a glance has have been received.
 	"""
 	
+	if session.pop('glance_done', None) is not True:
+		flash("Glance first to see your group!", "error")
+		return redirect(url_for("index"))
+	
 	received_glances = []
 	lookin_at = [x.looking_at_twitter_display_name for x in current_user.who_they_lookin_at]
 	noticed = dict( [(n.sender_twitter_display_name, n.when) for n in current_user.noticed_glances] )
 	for sender in lookin_at:
-		received_glances.append( (sender, noticed.get(sender)) )
+		received_glances.append( (sender, time_ago_human_readable(noticed.get(sender)) % sender) )
+
+	twitter_conn = app.social.twitter.get_connection()
+	current_user_twitter_display_name = twitter_conn.display_name
+
+	glance_form = DoGlanceForm()
 	
-	return render_template("list_glances.html", received_glances=received_glances)
+	return render_template("list_glances.html", received_glances=received_glances, glance_form=glance_form, current_user_twitter_display_name=current_user_twitter_display_name)
 
 @app.route("/about")
 def about():
