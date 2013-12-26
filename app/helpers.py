@@ -39,7 +39,15 @@ def calculate_group_energy(last_sent_glance=None, received_glances=[]):
 	
 	assert energy in [0, 1, 2, 3, 4]
 	return energy
-	
+
+def pluralise(num, singular):
+	if num == 0:
+		return "no %ss" % singular
+	elif num == 1:
+		return "1 %s" % singular
+	else:
+		return "%d %ss" % (num, singular)
+
 def time_ago_human_readable(dt=None):
 	now = datetime.utcnow()
 	
@@ -61,16 +69,16 @@ def time_ago_human_readable(dt=None):
 		ago_suffix = ""
 		if r.days > 0:
 			if r.hours == 0:
-				ago_suffix = "%d days ago" % r.days
+				ago_suffix = "%s ago" % pluralise(r.days, 'day')
 			else:
-				ago_suffix = "%d days and %d hours ago" % (r.days, r.hours)
+				ago_suffix = "%s and %s ago" % (pluralise(r.days, 'day'), pluralise(r.hours, 'hour'))
 		elif r.hours > 0:
 			if r.minutes == 0:
-				ago_suffix = "%d hours ago" % r.hours
+				ago_suffix = "%s ago" % pluralise(r.hours, 'hour')
 			else:
-				ago_suffix = "%d hours and %d minutes ago" % (r.hours, r.minutes)
+				ago_suffix = "%s and %s ago" % (pluralise(r.hours, 'hour'), pluralise(r.minutes, 'minute'))
 		else:
-			ago_suffix = "%d minutes ago" % r.minutes
+			ago_suffix = "%s ago" % pluralise(r.minutes, 'minute')
 		
 		ago_string = "%s last glanced at you " + ago_suffix
 	
