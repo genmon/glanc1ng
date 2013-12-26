@@ -18,7 +18,12 @@ SQLALCHEMY_MIGRATE_REPO = os.path.join(basedir, 'db_repository')
 CSRF_ENABLED = True
 SECRET_KEY = 'you-will-never-guess'
 
-DEBUG = True
+if os.environ.get('HEROKU'):
+	GOOGLE_ANALYTICS = True
+	DEBUG = False
+else:
+	GOOGLE_ANALYTICS = False
+	DEBUG = True
 
 # Social stuff
 SOCIAL_TWITTER = {
