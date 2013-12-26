@@ -23,10 +23,11 @@
 	<div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
 		{% if current_user.is_authenticated() %}
 		<ul class="nav navbar-nav">
+			<li><a href="{{ url_for('about') }}">About</a></li>
 			<li><a href="{{ url_for('group') }}">Edit group</a></li>
 		</ul>
 		<ul class="nav navbar-nav navbar-right">
-			<li><a href="/about">About</a></li>
+			<li><p class="navbar-text">Hello {{ current_user.connections[0].display_name }}!</p></li>
 			<li><a href="/logout">Sign out</a></li>
 		</ul>
 		{% endif %}
