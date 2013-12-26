@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Home{% endblock %}
+{% block title %}Glanc1ng{% endblock %}
 {% block regularpage %}
 
 <div class="row">
@@ -8,11 +8,34 @@
 		<img class="img-responsive" src="{{ url_for('static', filename="eye/%s.gif" % group_energy) }}" width="440" height="440">	
 	</div>
 	<div class="col-md-6">
-		<h1>Glancing</h1>
+		<p class="lead">Glanc1ng is an online experiment in eye contact and small groups.</p>
+		
+		{% if group_size == 0 %}
+		<p>You need friends to glance at!</p>
+
+		<p>Go to <a href="{{ url_for('group') }}">Edit group</a> and add one or more people.</p>
+		
+		{% else %}
+		
+		{% if group_energy == 0 %}
+			<p>There's no recent activity!</p>
+		{% elif group_energy == 1 %}
+			<p>Group energy is kinda low.</p>
+		{% elif group_energy == 2 %}
+			<p>Energy is picking up.</p>
+		{% elif group_energy == 3 %}
+			<p>Almost at maximum group energy.</p>
+		{% elif group_energy == 3 %}
+			<p>MAXIMUM GROUP ENERGY!</p>
+		{% endif %}
+		
+		<p>Glance now to see your group.</p>
+		
 		<form method="POST" action="{{ url_for('do_glance') }}">
 			{{ glance_form.hidden_tag() }}
 			<input type="submit" value="Glance">
-		</form>	
+		</form>
+		{% endif %}
 	</div>
 </div>
 

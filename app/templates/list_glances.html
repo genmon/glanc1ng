@@ -8,9 +8,22 @@
 		<img class="img-responsive" src="{{ url_for('static', filename="eye/%s.gif" % group_energy) }}" width="440" height="440">	
 	</div>
 	<div class="col-md-6">
-		<h1>Glances in your group</h1>
+
+		<h1>Your group</h1>
 
 		{% if received_glances %}
+
+		{% if group_energy == 0 %}
+			<p>There's no recent activity!</p>
+		{% elif group_energy == 1 %}
+			<p>Group energy is kinda low.</p>
+		{% elif group_energy == 2 %}
+			<p>Energy is picking up.</p>
+		{% elif group_energy == 3 %}
+			<p>Almost at maximum group energy.</p>
+		{% elif group_energy == 3 %}
+			<p>MAXIMUM GROUP ENERGY!</p>
+		{% endif %}
 
 		<table class="table">
 			{% for sender, when in received_glances %}
@@ -32,8 +45,10 @@
 
 		{% else %}
 
-		<p>You have no-one in your group.</p>
+		<p>You need friends to glance at!</p>
 
+		<p>Go to <a href="{{ url_for('group') }}">Edit group</a> and add one or more people.</p>
+		
 		{% endif %}
 
 	</div>

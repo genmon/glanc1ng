@@ -32,7 +32,7 @@ def index():
 
 	glance_form = DoGlanceForm()
 	
-	return render_template("index.html", glance_form=glance_form, group_energy=group_energy)
+	return render_template("index.html", glance_form=glance_form, group_energy=group_energy, group_size=len(current_user.who_they_lookin_at))
 
 @app.route("/test")
 @login_required
