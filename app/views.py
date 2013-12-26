@@ -32,7 +32,10 @@ def index():
 
 	glance_form = DoGlanceForm()
 	
-	return render_template("index.html", glance_form=glance_form, group_energy=group_energy, group_size=len(current_user.who_they_lookin_at))
+	group_tweet_text = "hey you :) "
+	group_tweet_text += " ".join([s for (s, w) in received_glances])	
+	
+	return render_template("index.html", glance_form=glance_form, group_energy=group_energy, group_size=len(current_user.who_they_lookin_at), group_tweet_text=group_tweet_text)
 
 @app.route("/test")
 @login_required
@@ -207,7 +210,10 @@ def list_glances():
 
 	glance_form = DoGlanceForm()
 	
-	return render_template("list_glances.html", received_glances=received_glances_human, glance_form=glance_form, current_user_twitter_display_name=current_user_twitter_display_name, group_energy=group_energy)
+	group_tweet_text = "hey you :) "
+	group_tweet_text += " ".join([s for (s, w) in received_glances])	
+	
+	return render_template("list_glances.html", received_glances=received_glances_human, glance_form=glance_form, current_user_twitter_display_name=current_user_twitter_display_name, group_energy=group_energy, group_tweet_text=group_tweet_text)
 
 @app.route("/about")
 def about():

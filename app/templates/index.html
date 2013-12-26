@@ -26,15 +26,21 @@
 		{% elif group_energy == 3 %}
 			<p>Almost at maximum group energy.</p>
 		{% elif group_energy == 4 %}
-			<p>MAXIMUM GROUP ENERGY!</p>
+			<div class="panel panel-default">
+				<div class="panel-body">
+					<p><strong>MAXIMUM GROUP ENERGY!</strong> Start a conversation!</p>
+					<a href="https://twitter.com/intent/tweet?via=glanc1ng&amp;url=http://&amp;text={{ group_tweet_text|urlencode }}" class="twitter-share-button" data-lang="en" data-size="large" data-count="none">Tweet</a>
+				</div>
+			</div>
 		{% endif %}
-		
+
 		<p>Glance now to see your group.</p>
 		
 		<form method="POST" action="{{ url_for('do_glance') }}">
 			{{ glance_form.hidden_tag() }}
-			<input type="submit" value="Glance">
-		</form>
+			<button type="submit" class="btn btn-primary">Glance</button>
+		</form>		
+		
 		{% endif %}
 	</div>
 </div>

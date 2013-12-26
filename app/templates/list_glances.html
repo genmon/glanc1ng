@@ -13,18 +13,6 @@
 
 		{% if received_glances %}
 
-		{% if group_energy == 0 %}
-			<p>There's no recent activity!</p>
-		{% elif group_energy == 1 %}
-			<p>Group energy is kinda low.</p>
-		{% elif group_energy == 2 %}
-			<p>Energy is picking up.</p>
-		{% elif group_energy == 3 %}
-			<p>Almost at maximum group energy.</p>
-		{% elif group_energy == 4 %}
-			<p>MAXIMUM GROUP ENERGY!</p>
-		{% endif %}
-
 		<table class="table">
 			{% for sender, when in received_glances %}
 			<tr>
@@ -38,9 +26,27 @@
 			</tr>
 		</table>
 
+		{% if group_energy == 0 %}
+			<p>There's no recent activity!</p>
+		{% elif group_energy == 1 %}
+			<p>Group energy is kinda low.</p>
+		{% elif group_energy == 2 %}
+			<p>Energy is picking up.</p>
+		{% elif group_energy == 3 %}
+			<p>Almost at maximum group energy.</p>
+		{% elif group_energy == 4 %}
+			<div class="panel panel-default">
+				<div class="panel-body">
+					<p><strong>MAXIMUM GROUP ENERGY!</strong> Start a conversation!</p>
+					<a href="https://twitter.com/intent/tweet?via=glanc1ng&amp;url=http://&amp;text={{ group_tweet_text|urlencode }}" class="twitter-share-button" data-lang="en" data-size="large" data-count="none">Tweet</a>
+				</div>
+			</div>
+		{% endif %}
+
+		<p>Glance to see if anything's changed.</p>
 		<form method="POST" action="{{ url_for('do_glance') }}">
 			{{ glance_form.hidden_tag() }}
-			<input type="submit" value="Glance again">
+			<button type="submit" class="btn btn-primary">Glance again</button>
 		</form>
 
 		{% else %}
