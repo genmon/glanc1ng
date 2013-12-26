@@ -4,22 +4,35 @@ from flask.ext.social.views import connect_handler
 from flask.ext.social.utils import get_provider_or_404
 
 from forms import AddGroupMemberForm, RemoveGroupMemberForm, DoGlanceForm
-from models import WhoYouLookinAt, Connection, NoticedGlance
+from models import WhoYouLookinAt, Connection, NoticedGlance, LastSentGlance
 
 from . import app, db
-from helpers import time_ago_human_readable
+from helpers import time_ago_human_readable, calculate_group_energy
 
-import datetime
+from datetime import datetime
 
 @app.route("/index")
 @app.route("/")
 def index():
 	if current_user.is_authenticated() is False:
 		return render_template("index_signed_out.html")
+
+	# @todo refactor this block
+	received_glances = []
+	lookin_at = [x.looking_at_twitter_display_name for x in current_user.who_they_lookin_at]
+	noticed = dict( [(n.sender_twitter_display_name, n.when) for n in current_user.noticed_glances] )
+	for sender in lookin_at:
+		received_glances.append( (sender, noticed.get(sender)) )
 	
+	last_sent_glance = None
+	if current_user.last_sent_glance is not None:
+		last_sent_glance = current_user.last_sent_glance.when
+
+	group_energy = calculate_group_energy(last_sent_glance=last_sent_glance, received_glances=received_glances)
+
 	glance_form = DoGlanceForm()
 	
-	return render_template("index.html", glance_form=glance_form)
+	return render_template("index.html", glance_form=glance_form, group_energy=group_energy)
 
 @app.route("/test")
 @login_required
@@ -137,18 +150,31 @@ def do_glance():
 					sender_twitter_display_name = twitter_conn.display_name
 					).first()
 				if glance is not None:
-					glance.when = datetime.datetime.utcnow()
+					glance.when = datetime.utcnow()
 					db.session.merge(glance)
 					db.session.commit()
 				else:
 					glance = NoticedGlance(
 						receiver_user_id = receiver_conn.user_id,
 						sender_twitter_display_name = twitter_conn.display_name,
-						when = datetime.datetime.utcnow())
+						when = datetime.utcnow())
 					db.session.add(glance)
 					db.session.commit()
 			else:
 				wont_receive.append(receiver.looking_at_twitter_display_name)
+
+	# record the sent glance
+	if current_user.last_sent_glance is None:
+		last_sent_glance = LastSentGlance(
+								sender_user_id=current_user.id,
+								when=datetime.utcnow())
+		db.session.add(last_sent_glance)
+		db.session.commit()
+	else:
+		last_sent_glance = current_user.last_sent_glance
+		last_sent_glance.when = datetime.utcnow()
+		db.session.merge(last_sent_glance)
+		db.session.commit()
 
 	session['glance_done'] = True
 	return redirect(url_for("list_glances"))
@@ -170,14 +196,18 @@ def list_glances():
 	lookin_at = [x.looking_at_twitter_display_name for x in current_user.who_they_lookin_at]
 	noticed = dict( [(n.sender_twitter_display_name, n.when) for n in current_user.noticed_glances] )
 	for sender in lookin_at:
-		received_glances.append( (sender, time_ago_human_readable(noticed.get(sender)) % sender) )
+		received_glances.append( (sender, noticed.get(sender)) )
+	
+	group_energy = calculate_group_energy(last_sent_glance=datetime.utcnow(), received_glances=received_glances)
+	
+	received_glances_human = [(s, time_ago_human_readable(w) % s) for (s, w) in received_glances]
 
 	twitter_conn = app.social.twitter.get_connection()
 	current_user_twitter_display_name = twitter_conn.display_name
 
 	glance_form = DoGlanceForm()
 	
-	return render_template("list_glances.html", received_glances=received_glances, glance_form=glance_form, current_user_twitter_display_name=current_user_twitter_display_name)
+	return render_template("list_glances.html", received_glances=received_glances_human, glance_form=glance_form, current_user_twitter_display_name=current_user_twitter_display_name, group_energy=group_energy)
 
 @app.route("/about")
 def about():

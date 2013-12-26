@@ -1,8 +1,45 @@
 from dateutil import relativedelta
 from datetime import datetime
 
-
-
+def calculate_group_energy(last_sent_glance=None, received_glances=[]):
+	""" Calculates group_energy from 0 to 4 where points are given:
+	+1 for you glancing in the last 60 minutes
+	+1 for one other glancing in the last 24 hours
+	+1 for one other glancing in the last 60 minutes, or >1 in the last 24
+	+1 for all others glancing in the last 60 minutes
+	"""
+	now = datetime.utcnow()
+	
+	# in seconds...
+	one_hour = 60 * 60
+	one_day = 24 * one_hour
+	
+	energy = 0
+	
+	# +1 for you glancing in the last 60 minutes
+	if last_sent_glance is not None and (now - last_sent_glance).seconds < one_hour:
+		energy +=1
+	
+	within_hour = [True for (s, w) in received_glances
+					if w is not None and (now - w).seconds < one_hour]
+	within_day = [True for (s, w) in received_glances
+					if w is not None and (now - w).seconds < one_day]
+	
+	# +1 for one other glancing in the last 24 hours
+	if len(within_day) > 0:
+		energy += 1
+	
+	# +1 for one other glancing in the last 60 minutes, or >1 in the last 24
+	if len(within_hour) > 0 or len(within_day) > 1:
+		energy += 1
+	
+	# +1 for all others glancing in the last 60 minutes
+	if len(within_hour) == len(received_glances):
+		energy += 1
+	
+	assert energy in [0, 1, 2, 3, 4]
+	return energy
+	
 def time_ago_human_readable(dt=None):
 	now = datetime.utcnow()
 	

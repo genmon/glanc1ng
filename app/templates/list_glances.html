@@ -3,32 +3,40 @@
 {% block title %}Glances at me{% endblock %}
 {% block regularpage %}
 
-<h1>Glances in your group</h1>
+<div class="row">
+	<div class="col-md-6">
+		<img class="img-responsive" src="{{ url_for('static', filename="eye/%s.gif" % group_energy) }}" width="440" height="440">	
+	</div>
+	<div class="col-md-6">
+		<h1>Glances in your group</h1>
 
-{% if received_glances %}
+		{% if received_glances %}
 
-<table class="table">
-	{% for sender, when in received_glances %}
-	<tr>
-		<td>{{ sender }}</td>
-		<td>{{ when }}</td>
-	</tr>
-	{% endfor %}
-	<tr>
-		<td>{{ current_user_twitter_display_name }}</td>
-		<td>You last glanced just now</td>
-	</tr>
-</table>
+		<table class="table">
+			{% for sender, when in received_glances %}
+			<tr>
+				<td>{{ sender }}</td>
+				<td>{{ when }}</td>
+			</tr>
+			{% endfor %}
+			<tr>
+				<td>{{ current_user_twitter_display_name }}</td>
+				<td>You last glanced just now</td>
+			</tr>
+		</table>
 
-<form method="POST" action="{{ url_for('do_glance') }}">
-	{{ glance_form.hidden_tag() }}
-	<input type="submit" value="Glance again">
-</form>
+		<form method="POST" action="{{ url_for('do_glance') }}">
+			{{ glance_form.hidden_tag() }}
+			<input type="submit" value="Glance again">
+		</form>
 
-{% else %}
+		{% else %}
 
-<p>You have no-one in your group.</p>
+		<p>You have no-one in your group.</p>
 
-{% endif %}
+		{% endif %}
+
+	</div>
+</div>
 
 {% endblock %}

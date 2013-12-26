@@ -33,6 +33,7 @@ class User(db.Model, UserMixin):
 		backref=db.backref('user', lazy='joined'), cascade="all")
 	who_they_lookin_at = db.relationship('WhoYouLookinAt', backref=db.backref('users', lazy='joined'))
 	noticed_glances = db.relationship('NoticedGlance', backref=db.backref('users', lazy='joined'))
+	last_sent_glance = db.relationship('LastSentGlance', backref=db.backref('users'), uselist=False)
 
 	def __repr__(self):
 		return '<User %r>' % (self.email)
@@ -90,5 +91,13 @@ class NoticedGlance(db.Model):
 	
 	receiver_user_id = db.Column(db.Integer, db.ForeignKey('users.id'), primary_key=True)
 	sender_twitter_display_name = db.Column(db.String(255), primary_key=True)
+	when = db.Column(db.DateTime())
+
+class LastSentGlance(db.Model):
+	""" Records the most recent glance sent by any given user. """
+	
+	__tablename__ = "last_sent_glance"
+	
+	sender_user_id = db.Column(db.Integer, db.ForeignKey('users.id'), primary_key=True)
 	when = db.Column(db.DateTime())
 

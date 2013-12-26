@@ -3,14 +3,17 @@
 {% block title %}Home{% endblock %}
 {% block regularpage %}
 
-
-<img class="img-responsive" src="{{ url_for('static', filename='eye/0.gif') }}" width="440" height="440">
-
-<h1>Glancing</h1>
-
-<form method="POST" action="{{ url_for('do_glance') }}">
-	{{ glance_form.hidden_tag() }}
-	<input type="submit" value="Glance">
-</form>
+<div class="row">
+	<div class="col-md-6">
+		<img class="img-responsive" src="{{ url_for('static', filename="eye/%s.gif" % group_energy) }}" width="440" height="440">	
+	</div>
+	<div class="col-md-6">
+		<h1>Glancing</h1>
+		<form method="POST" action="{{ url_for('do_glance') }}">
+			{{ glance_form.hidden_tag() }}
+			<input type="submit" value="Glance">
+		</form>	
+	</div>
+</div>
 
 {% endblock %}
