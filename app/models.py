@@ -100,4 +100,5 @@ class LastSentGlance(db.Model):
 	
 	sender_user_id = db.Column(db.Integer, db.ForeignKey('users.id'), primary_key=True)
 	when = db.Column(db.DateTime())
+	count = db.Column(db.Integer, default=1)
 

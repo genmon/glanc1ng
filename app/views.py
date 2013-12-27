@@ -170,12 +170,17 @@ def do_glance():
 	if current_user.last_sent_glance is None:
 		last_sent_glance = LastSentGlance(
 								sender_user_id=current_user.id,
-								when=datetime.utcnow())
+								when=datetime.utcnow(),
+								count=1)
 		db.session.add(last_sent_glance)
 		db.session.commit()
 	else:
 		last_sent_glance = current_user.last_sent_glance
 		last_sent_glance.when = datetime.utcnow()
+		if last_sent_glance.count is None:
+			last_sent_glance.count = 2
+		else:
+			last_sent_glance.count += 1
 		db.session.merge(last_sent_glance)
 		db.session.commit()
 
