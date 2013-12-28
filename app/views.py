@@ -5,7 +5,7 @@ from flask.ext.social.utils import get_provider_or_404
 from sqlalchemy.sql import func
 
 from forms import AddGroupMemberForm, RemoveGroupMemberForm, DoGlanceForm
-from models import User, WhoYouLookinAt, Connection, NoticedGlance, LastSentGlance
+from models import User, WhoYouLookinAt, Connection, NoticedGlance, LastSentGlance, LastUnnoticedGlance, UnnoticedGlance
 
 from . import app, db
 from helpers import time_ago_human_readable, calculate_group_energy
@@ -123,6 +123,7 @@ def group_member_remove(member=None):
 		
 	return redirect(url_for('group'))
 
+# @todo move commits to bottom of function
 @app.route("/do_glance", methods=['POST'])
 @login_required
 def do_glance():
@@ -146,7 +147,7 @@ def do_glance():
 			if notice is True:
 				will_receive.append(receiver.looking_at_twitter_display_name)
 				
-				# @todo record the glance
+				# record the glance
 				#receiver_user_id
 				#sender_twitter_display_name
 				glance = NoticedGlance().query.filter_by(
@@ -167,8 +168,28 @@ def do_glance():
 						count = 1)
 					db.session.add(glance)
 					db.session.commit()
-			else:
+			elif receiver_conn is not None:
+				# didn't notice, but is registered!
+				# record this anonymously
+				# 1. update last glance. 2. update 24 hour log
 				wont_receive.append(receiver.looking_at_twitter_display_name)
+
+				# 1.
+				glance = LastUnnoticedGlance().query.filter_by(
+					receiver_user_id = receiver_conn.user_id).first()
+				if glance is not None:
+					glance.when = datetime.utcnow()
+					db.session.merge(glance)
+					db.session.commit()
+				else:
+					glance = LastUnnoticedGlance(
+						receiver_user_id = receiver_conn.user_id,
+						when = datetime.utcnow())
+					db.session.add(glance)
+					db.session.commit
+				
+				# 2.
+				# @todo
 
 	# record the sent glance
 	if current_user.last_sent_glance is None:

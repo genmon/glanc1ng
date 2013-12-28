@@ -97,6 +97,29 @@ class NoticedGlance(db.Model):
 	when = db.Column(db.DateTime())
 	count = db.Column(db.Integer, default=1)
 
+class UnnoticedGlance(db.Model):
+	""" If a glance is made and fails to make it as NoticedGlance
+	because the received isn't looking back at the sender, it gets
+	captured here anonymously. Unnoticed glances are kept only for 1 day,
+	and I don't want to have a background job flushing the table so we
+	have weird incrementing days and looping hours instead
+	"""
+	
+	__tablename__ = "unnoticed_glance"
+	__table_args__ = (db.UniqueConstraint('receiver_user_id', 'hour'),)
+	
+	receiver_user_id = db.Column(db.Integer, db.ForeignKey('users.id'), primary_key=True)
+	hour = db.Column(db.Integer, primary_key=True)
+	days_since_epoch = db.Column(db.Integer)
+
+class LastUnnoticedGlance(db.Model):
+	""" Stores the most recent unnoticed glance """
+	
+	__tablename__ = "last_unnoticed_glance"
+	
+	receiver_user_id = db.Column(db.Integer, db.ForeignKey('users.id'), primary_key=True)
+	when = db.Column(db.DateTime())
+
 class LastSentGlance(db.Model):
 	""" Records the most recent glance sent by any given user. """
 	
