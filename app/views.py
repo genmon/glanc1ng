@@ -220,7 +220,7 @@ def list_glances():
 	""" Displays a list of [(from, when),]
 	where _when_ is None if a glance has have been received.
 	"""
-	
+
 	if session.pop('glance_done', None) is not True:
 		flash("Glance first to see your group!", "error")
 		return redirect(url_for("index"))

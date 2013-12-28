@@ -1,3 +1,5 @@
+from . import app
+
 from dateutil import relativedelta
 from datetime import datetime
 
@@ -12,30 +14,33 @@ def calculate_group_energy(last_sent_glance=None, received_glances=[]):
 	
 	# in seconds...
 	one_hour = 60 * 60
-	one_day = 24 * one_hour
 	
 	energy = 0
 	
 	# +1 for you glancing in the last 60 minutes
-	if last_sent_glance is not None and (now - last_sent_glance).seconds < one_hour:
+	if (last_sent_glance is not None) and ((now - last_sent_glance).seconds < one_hour) and ((now - last_sent_glance).days == 0):
 		energy +=1
+		app.logger.debug("+1 energy - last glanced within an hour")
 	
 	within_hour = [True for (s, w) in received_glances
-					if w is not None and (now - w).seconds < one_hour]
+					if (w is not None) and ((now - w).seconds < one_hour) and ((now - w).days == 0)]
 	within_day = [True for (s, w) in received_glances
-					if w is not None and (now - w).seconds < one_day]
+					if (w is not None) and ((now - w).days == 0)]
 	
-	# +1 for one other glancing in the last 24 hours
+	# +1 for one other glance in the last 24 hours
 	if len(within_day) > 0:
 		energy += 1
+		app.logger.debug("+1 energy - one other glance in last 24 hours")
 	
 	# +1 for one other glancing in the last 60 minutes, or >1 in the last 24
-	if len(within_hour) > 0 or len(within_day) > 1:
+	if (len(within_hour) > 0) or (len(within_day) > 1):
 		energy += 1
-	
+		app.logger.debug("+1 energy - 1 other glance in 1 hr, or >1 in 24")
+
 	# +1 for all others glancing in the last 60 minutes
 	if len(within_hour) == len(received_glances):
 		energy += 1
+		app.logger.debug("+1 energy - all others glance in last 1 hr")
 	
 	assert energy in [0, 1, 2, 3, 4]
 	return energy
