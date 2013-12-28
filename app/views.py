@@ -186,10 +186,32 @@ def do_glance():
 						receiver_user_id = receiver_conn.user_id,
 						when = datetime.utcnow())
 					db.session.add(glance)
-					db.session.commit
+					db.session.commit()
 				
 				# 2.
-				# @todo
+				# day is the gregorian ordinal, which increments
+				now = datetime.utcnow()
+				hour = now.hour
+				ordinal_day = now.toordinal()
+				log = UnnoticedGlance().query.filter_by(
+					receiver_user_id = receiver_conn.user_id,
+					hour = hour).first()
+				if log is not None:
+					if log.ordinal_day == ordinal_day:
+						log.count += 1
+					else:
+						log.ordinal_day = ordinal.day
+						log.count = 1
+					db.session.merge(log)
+					db.session.commit()
+				else:
+					log = UnnoticedGlance(
+						receiver_user_id = receiver_conn.user_id,
+						hour = hour,
+						ordinal_day = ordinal_day,
+						count = 1)
+					db.session.add(log)
+					db.session.commit()
 
 	# record the sent glance
 	if current_user.last_sent_glance is None:

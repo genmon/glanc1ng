@@ -110,7 +110,8 @@ class UnnoticedGlance(db.Model):
 	
 	receiver_user_id = db.Column(db.Integer, db.ForeignKey('users.id'), primary_key=True)
 	hour = db.Column(db.Integer, primary_key=True)
-	days_since_epoch = db.Column(db.Integer)
+	ordinal_day = db.Column(db.Integer)
+	count = db.Column(db.Integer)
 
 class LastUnnoticedGlance(db.Model):
 	""" Stores the most recent unnoticed glance """
