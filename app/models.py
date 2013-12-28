@@ -84,6 +84,9 @@ class NoticedGlance(db.Model):
 	
 	- for every RECEIVER user_id
 	- we store a list of SENDER twitter display names
+	
+	(and a count of how many times this particular glance has been
+	noticed.)
 	"""
 
 	__tablename__ = "noticed_glance"
@@ -92,6 +95,7 @@ class NoticedGlance(db.Model):
 	receiver_user_id = db.Column(db.Integer, db.ForeignKey('users.id'), primary_key=True)
 	sender_twitter_display_name = db.Column(db.String(255), primary_key=True)
 	when = db.Column(db.DateTime())
+	count = db.Column(db.Integer, default=1)
 
 class LastSentGlance(db.Model):
 	""" Records the most recent glance sent by any given user. """

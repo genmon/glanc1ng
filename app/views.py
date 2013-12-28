@@ -155,12 +155,15 @@ def do_glance():
 				if glance is not None:
 					glance.when = datetime.utcnow()
 					db.session.merge(glance)
+					if glance.count is None:
+						glance.count = 2
 					db.session.commit()
 				else:
 					glance = NoticedGlance(
 						receiver_user_id = receiver_conn.user_id,
 						sender_twitter_display_name = twitter_conn.display_name,
-						when = datetime.utcnow())
+						when = datetime.utcnow(),
+						count = 1)
 					db.session.add(glance)
 					db.session.commit()
 			else:
