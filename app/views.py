@@ -156,9 +156,11 @@ def do_glance():
 					).first()
 				if glance is not None:
 					glance.when = datetime.utcnow()
-					db.session.merge(glance)
 					if glance.count is None:
 						glance.count = 2
+					else:
+						glance.count += 1
+					db.session.merge(glance)
 					db.session.commit()
 				else:
 					glance = NoticedGlance(
