@@ -2,9 +2,10 @@ from flask import render_template, request, redirect, url_for, abort, session, f
 from flask.ext.security import login_required, current_user, login_user
 from flask.ext.social.views import connect_handler
 from flask.ext.social.utils import get_provider_or_404
+from sqlalchemy.sql import func
 
 from forms import AddGroupMemberForm, RemoveGroupMemberForm, DoGlanceForm
-from models import WhoYouLookinAt, Connection, NoticedGlance, LastSentGlance
+from models import User, WhoYouLookinAt, Connection, NoticedGlance, LastSentGlance
 
 from . import app, db
 from helpers import time_ago_human_readable, calculate_group_energy
@@ -226,4 +227,59 @@ def list_glances():
 @app.route("/about")
 def about():
 	return render_template("about.html")
+
+# login required because this hammers the database
+# and UNLINKED from the main site
+@app.route("/about/stats")
+@login_required
+def stats():
+	# "None" below means we have to calculate it
+	stats = {
+		'registered_users': int(User.query.count()),
+		'groups': int(WhoYouLookinAt.query.distinct('user_id').count()),
+		'all_users': None,
+		'memberships': int(WhoYouLookinAt.query.count()),
+		'memberships_of_registered_users': None,
+		'reciprocated_memberships': None,
+		'mean_formed_group_size': None,
+		'sent_glances': 0,
+		'noticed_glances': 0
+	}
+	
+	# all_users
+	registered = [r.display_name for r in Connection.query.all()]
+	unregistered = [r.looking_at_twitter_display_name for r in WhoYouLookinAt.query.distinct('looking_at_twitter_display_name').all()]
+	stats['all_users'] = len(set(registered + unregistered))
+	
+	# memberships_of_registered_users
+	# reciprocated_memberships
+	registered_memberships = [(w.user_id, c.user_id)
+		for w, c
+		in WhoYouLookinAt.query.outerjoin(Connection, WhoYouLookinAt.looking_at_twitter_display_name==Connection.display_name).filter(Connection.display_name != None).add_entity(Connection).all()]
+	stats['memberships_of_registered_users'] = len(registered_memberships)
+	count = 0
+	for pair in registered_memberships:
+		if (pair[1], pair[0]) in registered_memberships:
+			count += 1
+	stats['reciprocated_memberships'] = count
+	
+	# mean_formed_group_size
+	stats['mean_formed_group_size'] = "%.1f" % (float(stats['memberships'])/stats['groups'])
+	
+	# sent_glances
+	# from when sent glances weren't counted...
+	sent1 = int(LastSentGlance.query.filter(LastSentGlance.count == None).count())
+	# from after they were counted...
+	sent2 = int(db.session.query(func.sum(LastSentGlance.count)).filter(LastSentGlance.count != None).first()[0])
+	stats['sent_glances'] = sent1 + sent2
+
+	# noticed_glances
+	# from when noticed glances weren't counted...
+	noticed1 = int(NoticedGlance.query.filter(NoticedGlance.count == None).count())
+	# from after they were counted...
+	noticed2 = int(db.session.query(func.sum(NoticedGlance.count)).filter(NoticedGlance.count != None).first()[0])
+	stats['noticed_glances'] = noticed1 + noticed2
+
+	
+	return render_template("about_stats.html", **stats)
 	

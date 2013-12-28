@@ -13,6 +13,10 @@ http://pythonhosted.org/Flask-Social/
 
 Install postgresapp.com
 
+Copying this to local...
+
+https://devcenter.heroku.com/articles/heroku-postgres-import-export
+
 # Twitter
 
 Don't forget to enable "Allow this application to be used to Sign in with Twitter" on the app at https://dev.twitter.com/apps
