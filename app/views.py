@@ -83,7 +83,7 @@ def register(provider_id=None):
 
 	return abort(404)
 
-@app.route("/twitter_friends")
+#@app.route("/twitter_friends")
 @login_required
 def twitter_friends():
 	twitter_api = get_provider_or_404('twitter').get_api()
@@ -134,7 +134,7 @@ def group_member_remove(member=None):
 
 # will replace do_glance eventually
 # @todo remove GET and remove the "if False" below
-@app.route("/send_glance", methods=['GET', 'POST'])
+#@app.route("/send_glance", methods=['GET', 'POST'])
 @login_required
 def send_glance():
 	""" Sends a glance to all Twitter friends of the logged-in user.
@@ -174,6 +174,13 @@ def send_glance():
 	
 	# update the cache of the sender's twitter friends
 	# @todo this needs to also update mutual friendships
+	# @todo I'm getting fails from Heroku on this line
+	# get_provider_or_404('twitter').get_api(), with:
+	# TwitterError: [{u'message': u'Could not authenticate you', u'code': 32}]
+	# could this be because I'm signing into the same Twitter
+	# application in development and production, and so the
+	# key is out of date? In which case, how do I refresh it each
+	# time?
 	commit_required = helpers.update_twitter_friends_cache(
 		twitter_id=sender_twitter_id,
 		twitter_api=get_provider_or_404('twitter').get_api(),
