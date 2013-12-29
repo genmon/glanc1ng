@@ -20,7 +20,7 @@ SECRET_KEY = 'you-will-never-guess'
 
 if os.environ.get('HEROKU'):
 	GOOGLE_ANALYTICS = True
-	DEBUG = True
+	DEBUG = False
 else:
 	GOOGLE_ANALYTICS = False
 	DEBUG = True
