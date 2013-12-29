@@ -309,7 +309,7 @@ def do_glance():
 					if log.ordinal_day == ordinal_day:
 						log.count += 1
 					else:
-						log.ordinal_day = ordinal.day
+						log.ordinal_day = ordinal_day
 						log.count = 1
 					db.session.merge(log)
 					db.session.commit()

@@ -166,7 +166,7 @@ def log_unnoticed_glance(receiver_twitter_id=None, db_session=None):
 			log.count += 1
 		else:
 			# it's old, replace it
-			log.ordinal_day = ordinal.day
+			log.ordinal_day = ordinal_day
 			log.count = 1
 		db_session.merge(log)
 	else:
