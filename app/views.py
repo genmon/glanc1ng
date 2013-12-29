@@ -134,7 +134,7 @@ def group_member_remove(member=None):
 
 # will replace do_glance eventually
 # @todo remove GET and remove the "if False" below
-#@app.route("/send_glance", methods=['GET', 'POST'])
+@app.route("/send_glance", methods=['GET', 'POST'])
 @login_required
 def send_glance():
 	""" Sends a glance to all Twitter friends of the logged-in user.
