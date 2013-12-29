@@ -1,7 +1,198 @@
+""" Database commit policy: Helper functions DO NOT commit the db.session,
+    and must always have it passed in. """
+
 from . import app
+from models import TwitterFriendsCacheLastUpdated, TwitterFriendsCache, SentGlance, ReceivedNoticedGlance, Connection, ReceivedUnnoticedGlance, MostRecentReceivedUnnoticedGlance
 
 from dateutil import relativedelta
 from datetime import datetime
+
+def get_twitter_id(user=None):
+	""" For a user object, return the Twitter ID.
+	@todo be robust against multiple social network connections """
+	return int(user.connections[0].provider_user_id)
+
+def update_twitter_friends_cache(twitter_id=None, twitter_api=None, db_session=None):
+	""" For a twitter ID, update the database table containing the
+	list of Twitter friends. """
+	
+	now = datetime.utcnow()
+	
+	last_updated = TwitterFriendsCacheLastUpdated.query.filter_by(
+		twitter_id = twitter_id).first()
+	if last_updated is None:
+		last_updated = TwitterFriendsCacheLastUpdated(
+			twitter_id = twitter_id,
+			when = now)
+		db_session.add(last_updated)
+	elif (now - last_updated.when).days > 0:
+		last_updated.when = now
+		db_session.merge(last_updated)
+	else:
+		# cache update not required
+		return False
+
+	friends = twitter_api.GetFriendIDs(user_id=twitter_id)
+	
+	# remove existing friends from the DB and replace it with new ones
+	TwitterFriendsCache.query.filter_by(
+		twitter_id = twitter_id).delete()
+	for f in friends:
+		t = TwitterFriendsCache(
+			twitter_id = twitter_id,
+			friend_twitter_id = f)
+		db_session.add(t)
+	
+	return True # will commit
+
+
+def get_twitter_friends(twitter_id=None):
+	""" Returns Twitter IDs of all the friends of this user """
+	friends_q = TwitterFriendsCache.query.filter_by(
+						twitter_id = twitter_id).all()
+	
+	if friends_q is None:
+		friends = []
+	else:
+		friends = [f.friend_twitter_id for f in friends_q]
+	
+	return friends
+
+	
+def log_sent_glance(sender_twitter_id=None, db_session=None):
+	""" Logs that this Twitter ID sent this glance. """
+	
+	now = datetime.utcnow()
+	
+	sent_glance = SentGlance.query.filter_by(
+					twitter_id = sender_twitter_id).first()
+	if sent_glance is not None:
+		sent_glance.most_recent = now
+		sent_glance.count += 1
+		db_session.merge(sent_glance)
+	else:
+		sent_glance = SentGlance(
+						twitter_id = sender_twitter_id,
+						most_recent = now,
+						count = 1)
+		db_session.add(sent_glance)
+	
+	return True
+
+
+def glance_is_noticed(sender_user=None, receiver_twitter_id=None):
+	""" For a glance to be noticed by a receiver, they must be
+	(a) signed up, and therefore in Connection; and
+	(b) they must be listed in the sender's group
+	"""
+
+	noticed = False
+	
+	conn = Connection.query.filter_by(
+			provider_user_id=str(receiver_twitter_id)).first()
+	if conn is not None:
+		receiver_twitter_name = conn.display_name
+		
+		if sender_user.who_they_lookin_at is not None:
+			group = [r.looking_at_twitter_display_name for r in sender_user.who_they_lookin_at]
+		else:
+			group = []
+		
+		if receiver_twitter_name in group:
+			noticed = True
+	
+	return noticed
+
+
+
+def glance_is_transitory(sender_user=None, receiver_twitter_id=None):
+	return False
+
+
+
+def log_noticed_glance(sender_twitter_id=None, receiver_twitter_id=None, db_session=None):
+	""" Logs a received and NOTICED glance to the database, counting up. """
+	
+	now = datetime.utcnow()
+	
+	glance = ReceivedNoticedGlance.query.filter_by(
+				sender_twitter_id=sender_twitter_id,
+				receiver_twitter_id=receiver_twitter_id).first()
+	
+	if glance is not None:
+		glance.most_recent = now
+		glance.count += 1
+		db_session.merge(glance)
+	else:
+		glance = ReceivedNoticedGlance(
+					sender_twitter_id=sender_twitter_id,
+					receiver_twitter_id=receiver_twitter_id,
+					most_recent=now,
+					count=1)
+		db_session.add(glance)
+	
+	return True
+
+
+def log_unnoticed_glance(receiver_twitter_id=None, db_session=None):
+	""" When a receiver is NOT looking at a sender, the glance is
+	unnoticed. This means it is logged anonymously so an aggregate
+	score can be shown for 24 hours. (The glance might also be
+	transitory, in which case a name will be shown, but that's
+	dealt with elsewhere.)
+	
+	To avoid having to sweep the database, each receiver can have a
+	maximum of 24 rows in this table: one for each hour of the day.
+	By each hour, the ordinal day (1 = first day of the current
+	Gregorian calendar, and it increments every day since) is also
+	stored. When the table is consulted, only hours in the last 24
+	hours are looked at.
+	"""
+
+	# timing information
+	now = datetime.utcnow()
+	hour = now.hour
+	ordinal_day = now.toordinal()
+	
+	log = ReceivedUnnoticedGlance.query.filter_by(
+		receiver_twitter_id = receiver_twitter_id,
+		hour = hour).first()
+	
+	if log is not None:
+		# if there's already a record for this Twitter ID and this
+		# hour in the table, it might be current or it might be old
+		if log.ordinal_day == ordinal_day:
+			# it's current, update it
+			log.count += 1
+		else:
+			# it's old, replace it
+			log.ordinal_day = ordinal.day
+			log.count = 1
+		db_session.merge(log)
+	else:
+		# there's no record, so create one
+		log = ReceivedUnnoticedGlance(
+			receiver_twitter_id = receiver_twitter_id,
+			hour = hour,
+			ordinal_day = ordinal_day,
+			count = 1)
+		db_session.add(log)
+
+	# update the table which shows when the last unnoticed glance
+	# was received
+	glance = MostRecentReceivedUnnoticedGlance.query.filter_by(
+		receiver_twitter_id = receiver_twitter_id).first()
+	if glance is not None:
+		glance.when = datetime.utcnow()
+		db_session.merge(glance)
+	else:
+		glance = MostRecentReceivedUnnoticedGlance(
+			receiver_twitter_id = receiver_twitter_id,
+			when = datetime.utcnow())
+		db_session.add(glance)
+
+	return True
+
 
 def calculate_group_energy(last_sent_glance=None, received_glances=[]):
 	""" Calculates group_energy from 0 to 4 where points are given:

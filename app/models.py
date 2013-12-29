@@ -122,7 +122,9 @@ class LastUnnoticedGlance(db.Model):
 	when = db.Column(db.DateTime())
 
 class LastSentGlance(db.Model):
-	""" Records the most recent glance sent by any given user. """
+	""" Records the most recent glance sent by any given user.
+	
+	@todo delete when refactoring! """
 	
 	__tablename__ = "last_sent_glance"
 	
@@ -130,3 +132,68 @@ class LastSentGlance(db.Model):
 	when = db.Column(db.DateTime())
 	count = db.Column(db.Integer, default=1)
 
+
+class ReceivedUnnoticedGlance(db.Model):
+	""" If a glance is made and fails to make it as RecievedNoticedGlance
+	because the received isn't looking back at the sender, it gets
+	captured here anonymously. Unnoticed glances are kept only for 1 day,
+	and I don't want to have a background job flushing the table so we
+	have weird incrementing days and looping hours instead
+	"""
+
+	__tablename__ = "received_unnoticed_glance"
+	__table_args__ = (db.UniqueConstraint('receiver_twitter_id', 'hour'),)
+
+	receiver_twitter_id = db.Column(db.Integer, primary_key=True)
+	hour = db.Column(db.Integer, primary_key=True)
+	ordinal_day = db.Column(db.Integer)
+	count = db.Column(db.Integer)
+
+class MostRecentReceivedUnnoticedGlance(db.Model):
+	""" Stores the most recent unnoticed glance """
+
+	__tablename__ = "most_recent_received_unnoticed_glance"
+
+	receiver_twitter_id = db.Column(db.Integer, primary_key=True)
+	when = db.Column(db.DateTime())
+
+class ReceivedNoticedGlance(db.Model):
+	""" A count of all glances received by a user (identified
+	by Twitter ID). To receive and NOTICE a glance, the receiver
+	must be looking at the sender at the time the glance was sent.
+	"""
+	
+	__tablename__ = "received_noticed_glance"
+	__table_args__ = (db.UniqueConstraint('receiver_twitter_id', 'sender_twitter_id'),)
+
+	receiver_twitter_id = db.Column(db.Integer, primary_key=True)
+	sender_twitter_id = db.Column(db.Integer, primary_key=True)
+	most_recent = db.Column(db.DateTime())
+	count = db.Column(db.Integer, default=1)
+
+class SentGlance(db.Model):
+	""" Records sent glances sent by a given user """
+	
+	__tablename__ = "sent_glance"
+	
+	twitter_id = db.Column(db.Integer, primary_key=True)
+	most_recent = db.Column(db.DateTime(), nullable=False)
+	count = db.Column(db.Integer, nullable=False)
+
+class TwitterFriendsCacheLastUpdated(db.Model):
+	""" Records when the cache of Twitter friends was last updated
+	for each user. """
+	
+	__tablename__ = "twitter_friends_cache_last_updated"
+	
+	twitter_id = db.Column(db.Integer, primary_key=True)
+	when = db.Column(db.DateTime(), nullable=False)
+
+class TwitterFriendsCache(db.Model):
+	""" Caches the list of Twitter friends for each user. """
+	
+	__tablename__ = "twitter_friends_cache"
+	__table_args__ = (db.UniqueConstraint('twitter_id', 'friend_twitter_id'),)
+	
+	twitter_id = db.Column(db.Integer, primary_key=True)
+	friend_twitter_id = db.Column(db.Integer, primary_key=True)

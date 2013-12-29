@@ -8,7 +8,7 @@ from forms import AddGroupMemberForm, RemoveGroupMemberForm, DoGlanceForm
 from models import User, WhoYouLookinAt, Connection, NoticedGlance, LastSentGlance, LastUnnoticedGlance, UnnoticedGlance
 
 from . import app, db
-from helpers import time_ago_human_readable, calculate_group_energy
+import helpers
 
 from datetime import datetime
 
@@ -28,9 +28,9 @@ def index():
 	if current_user.last_sent_glance is not None:
 		last_sent_glance = current_user.last_sent_glance.when
 
-	group_energy = calculate_group_energy(last_sent_glance=last_sent_glance, received_glances=received_glances)
+	group_energy = helpers.calculate_group_energy(last_sent_glance=last_sent_glance, received_glances=received_glances)
 
-	received_glances_human = [(s, time_ago_human_readable(w) % s) for (s, w) in received_glances]
+	received_glances_human = [(s, helpers.time_ago_human_readable(w) % s) for (s, w) in received_glances]
 
 	twitter_conn = app.social.twitter.get_connection()
 	current_user_twitter_display_name = twitter_conn.display_name
@@ -83,7 +83,7 @@ def register(provider_id=None):
 
 	return abort(404)
 
-#@app.route("/twitter_friends")
+@app.route("/twitter_friends")
 @login_required
 def twitter_friends():
 	twitter_api = get_provider_or_404('twitter').get_api()
@@ -131,6 +131,97 @@ def group_member_remove(member=None):
 		flash('Something went wrong!')
 		
 	return redirect(url_for('group'))
+
+# will replace do_glance eventually
+# @todo remove GET and remove the "if False" below
+#@app.route("/send_glance", methods=['GET', 'POST'])
+@login_required
+def send_glance():
+	""" Sends a glance to all Twitter friends of the logged-in user.
+	
+	Launch functionality:
+	
+	- all glance-related tables now use twitter_id (an integer)
+	- updates the local cache of twitter friendships if required
+	- saves that a glance was sent by this user
+	- for all twitter friends of this user:
+		- if the friend is a registered user and looking back,
+		  logs a noticed glance for that receiver (appears to the
+		  sender named and forever)
+		- otherwise logs an unnoticed glance for that receiver
+		  (appears to the sender anonymously for 24 hour)
+	- commits the session
+	
+	@todo functionality:
+	
+	- cache mutual friendships of all this user's friends
+		- (requires friendships/lookup.json added to python-twitter)
+	- for all twitter friends of this user:
+		- if the friend is a mutual friend and not looking back,
+		  logs a transitory glance (appears to the sender named
+		  for an hour, then anonymously for 24 hours). This is a
+		  type of unnoticed glance	
+	"""
+	
+	# check whether we're really sending the glance
+	glance_form = DoGlanceForm()
+	if False and not (request.method == 'POST' and glance_form.validate()):
+		flash("Glance not successful", "error")
+		return redirect(url_for('index'))
+	
+	# everything following works from the sender's Twitter ID
+	sender_twitter_id = helpers.get_twitter_id(user=current_user)
+	
+	# update the cache of the sender's twitter friends
+	# @todo this needs to also update mutual friendships
+	commit_required = helpers.update_twitter_friends_cache(
+		twitter_id=sender_twitter_id,
+		twitter_api=get_provider_or_404('twitter').get_api(),
+		db_session=db.session)
+	if commit_required:
+		db.session.commit()
+
+	# log the sent glance. note no commit... the next time we commit
+	# is at the end of the function
+	helpers.log_sent_glance(
+		sender_twitter_id=sender_twitter_id,
+		db_session=db.session) # db not yet committed!
+	
+
+	# loop over all twitter friends of the sender... these are
+	# all receivers
+	receivers = helpers.get_twitter_friends(twitter_id=sender_twitter_id)
+
+	for receiver_twitter_id in receivers:
+		if helpers.glance_is_noticed(
+							sender_user=current_user,
+							receiver_twitter_id=receiver_twitter_id):
+			# if the receiver is a registered user and the sender is in the
+			# receiver's group, this glance will be noticed
+			helpers.log_noticed_glance(
+				sender_twitter_id=sender_twitter_id,
+				receiver_twitter_id=receiver_twitter_id,
+				db_session=db.session)
+		
+		else:
+			# the receiver gets an unnoticed glance
+			helpers.log_unnoticed_glance(
+				receiver_twitter_id=receiver_twitter_id,
+				db_session=db.session)
+
+			# the glance might also be transitory, in which
+			# case it has a chance of being seen by the user
+			if helpers.glance_is_transitory(
+									sender_user=current_user,
+									receiver_twitter_id=receiver_twitter_id):
+				# @todo add transitory glances
+				pass
+			
+	
+	# commit and finish up
+	db.session.commit()
+	session['glance_done'] = True
+	return redirect(url_for('index'))
 
 # @todo move commits to bottom of function
 @app.route("/do_glance", methods=['POST'])

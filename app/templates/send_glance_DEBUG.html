@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block title %}Glanc1ng - send_glance_DEBUG{% endblock %}
+
+{% block regularpage %}
+
+<ul>
+	<li>sender_twitter_id: {{ sender_twitter_id }}</li>
+	<li>commit_required: {{ commit_required }}</li>
+	<li>receivers:
+		<ul>
+			{% for r in receivers %}<li>{{ r }}</li>{% endfor %}
+		</ul></li>
+</ul>
+
+{% endblock %}
