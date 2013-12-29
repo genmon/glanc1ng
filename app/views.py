@@ -18,7 +18,6 @@ def index():
 	if current_user.is_authenticated() is False:
 		return render_template("index_signed_out.html")
 
-	# @todo refactor this block
 	received_glances = []
 	lookin_at = [x.looking_at_twitter_display_name for x in current_user.who_they_lookin_at]
 	noticed = dict( [(n.sender_twitter_display_name, n.when) for n in current_user.noticed_glances] )
@@ -31,17 +30,27 @@ def index():
 
 	group_energy = calculate_group_energy(last_sent_glance=last_sent_glance, received_glances=received_glances)
 
+	received_glances_human = [(s, time_ago_human_readable(w) % s) for (s, w) in received_glances]
+
+	twitter_conn = app.social.twitter.get_connection()
+	current_user_twitter_display_name = twitter_conn.display_name
+
 	glance_form = DoGlanceForm()
 	
 	group_tweet_text = "hey you :) "
 	group_tweet_text += " ".join([s for (s, w) in received_glances])	
 	
-	return render_template("index.html", glance_form=glance_form, group_energy=group_energy, group_size=len(current_user.who_they_lookin_at), group_tweet_text=group_tweet_text)
-
-@app.route("/test")
-@login_required
-def test():
-	return render_template("test.html", current_user=current_user)
+	# will be True if do_glance was called
+	show_group = session.pop('glance_done', False)
+	
+	return render_template("index.html",
+		show_group=show_group,
+		received_glances=received_glances_human,
+		glance_form=glance_form,
+		current_user_twitter_display_name=current_user_twitter_display_name,
+		group_energy=group_energy,
+		group_size=len(current_user.who_they_lookin_at),
+		group_tweet_text=group_tweet_text)
 
 @app.route('/register/<provider_id>', methods=['GET', 'POST'])
 def register(provider_id=None):
@@ -234,40 +243,10 @@ def do_glance():
 		db.session.commit()
 
 	session['glance_done'] = True
-	return redirect(url_for("list_glances"))
+	return redirect(url_for("index"))
 
 	return render_template("do_glance_DEBUG.html", will_receive=will_receive, wont_receive=wont_receive)
 
-@app.route("/list_glances")
-@login_required
-def list_glances():
-	""" Displays a list of [(from, when),]
-	where _when_ is None if a glance has have been received.
-	"""
-
-	if session.pop('glance_done', None) is not True:
-		flash("Glance first to see your group!", "error")
-		return redirect(url_for("index"))
-	
-	received_glances = []
-	lookin_at = [x.looking_at_twitter_display_name for x in current_user.who_they_lookin_at]
-	noticed = dict( [(n.sender_twitter_display_name, n.when) for n in current_user.noticed_glances] )
-	for sender in lookin_at:
-		received_glances.append( (sender, noticed.get(sender)) )
-	
-	group_energy = calculate_group_energy(last_sent_glance=datetime.utcnow(), received_glances=received_glances)
-	
-	received_glances_human = [(s, time_ago_human_readable(w) % s) for (s, w) in received_glances]
-
-	twitter_conn = app.social.twitter.get_connection()
-	current_user_twitter_display_name = twitter_conn.display_name
-
-	glance_form = DoGlanceForm()
-	
-	group_tweet_text = "hey you :) "
-	group_tweet_text += " ".join([s for (s, w) in received_glances])	
-	
-	return render_template("list_glances.html", received_glances=received_glances_human, glance_form=glance_form, current_user_twitter_display_name=current_user_twitter_display_name, group_energy=group_energy, group_tweet_text=group_tweet_text)
 
 @app.route("/about")
 def about():

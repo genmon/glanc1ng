@@ -8,14 +8,38 @@
 		<img class="img-responsive" src="{{ url_for('static', filename="eye/%s.png" % group_energy) }}" width="440" height="440">	
 	</div>
 	<div class="col-md-6">
+	{% if group_size == 0 %}
+
 		<p class="lead">Glanc1ng is an online experiment in eye contact and small groups.</p>
 		
-		{% if group_size == 0 %}
 		<p>You need friends to glance at!</p>
 
 		<p>Go to <a href="{{ url_for('group') }}">Edit group</a> and add one or more people.</p>
 		
+	{% else %}
+
+		{% if show_group %}
+
+		<h1>Your group</h1>
+		
+		<table class="table">
+			{% for sender, when in received_glances %}
+			<tr>
+				<td>{{ sender }}</td>
+				<td>{{ when }}</td>
+			</tr>
+			{% endfor %}
+			<tr>
+				<td>{{ current_user_twitter_display_name }}</td>
+				<td>You last glanced just now</td>
+			</tr>
+		</table>
+		
 		{% else %}
+
+		<p class="lead">Glanc1ng is an online experiment in eye contact and small groups.</p>
+		
+		{% endif %}
 		
 		{% if group_energy == 0 %}
 			<p>There's no recent activity!</p>
@@ -34,11 +58,15 @@
 			</div>
 		{% endif %}
 
+		{% if show_group %}
+		<p>Glance to see if anything's changed.</p>
+		{% else %}
 		<p>Glance now to see your group.</p>
+		{% endif %}
 		
 		<form method="POST" action="{{ url_for('do_glance') }}">
 			{{ glance_form.hidden_tag() }}
-			<button type="submit" class="btn btn-primary">Glance</button>
+			<button type="submit" class="btn btn-primary">Glance{% if show_group %} again{% endif %}</button>
 		</form>		
 		
 		{% endif %}
