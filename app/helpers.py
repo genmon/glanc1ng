@@ -211,6 +211,9 @@ def log_noticed_glance(sender_twitter_id=None, receiver_twitter_id=None, db_sess
 	return True
 
 
+# @todo fix the query here, it's a crazy slow call... takes a second
+# to do the multirow insert. would moving it offline help? or into
+# an in-memory cache?
 def log_unnoticed_glances(receivers=[], db_session=None):
 	""" When a receiver is NOT looking at a sender, the glance is
 	unnoticed. This means it is logged anonymously so an aggregate

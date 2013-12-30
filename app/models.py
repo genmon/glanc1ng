@@ -125,4 +125,4 @@ class TwitterFriendsCache(db.Model):
 	__table_args__ = (db.UniqueConstraint('twitter_id', 'friend_twitter_id'),)
 	
 	twitter_id = db.Column(db.String(255), primary_key=True)
-	friend_twitter_id = db.Column(db.Integer, primary_key=True)
+	friend_twitter_id = db.Column(db.String(255), primary_key=True)
