@@ -30,7 +30,7 @@ def index():
 		if sender_id is None:
 			# this member of the group is not registered
 			received_glances.append((sender_name, None))
-		elif received_dict.has_key(sender_id):
+		elif senders_dict.has_key(sender_id):
 			# this member of the group is registered, and
 			# has also sent a glance at receiver
 			received_glances.append(
