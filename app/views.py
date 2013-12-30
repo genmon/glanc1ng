@@ -38,7 +38,7 @@ def index():
 		else:
 			# this member of the group is registered, but
 			# has never sent a glance at receiver
-			received_glances_human.append((sender_name, None))
+			received_glances.append((sender_name, None))
 	
 	last_sent_glance = helpers.get_most_recent_sent_glance(user=current_user)
 
