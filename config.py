@@ -20,7 +20,8 @@ SECRET_KEY = 'you-will-never-guess'
 
 if os.environ.get('HEROKU'):
 	GOOGLE_ANALYTICS = True
-	if os.environ.get('DEBUG') and os.environ['DEBUG'] == 1:
+	# heroku config:set DEBUG=1
+	if os.environ.get('DEBUG'):
 		DEBUG = True
 	else:
 		DEBUG = False
