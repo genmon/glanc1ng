@@ -41,6 +41,7 @@ class User(db.Model, UserMixin):
 	who_they_lookin_at = db.relationship('WhoYouLookinAt', backref=db.backref('users', lazy='joined'), cascade="all")
 	noticed_glances = db.relationship('NoticedGlance', backref=db.backref('users', lazy='joined'), cascade="all")
 	last_sent_glance = db.relationship('LastSentGlance', backref=db.backref('users'), cascade="all", uselist=False)
+	unnoticed_glances = db.relationship('UnnoticedGlance', backref=db.backref('users', lazy='joined'), cascade="all")
 
 	def __repr__(self):
 		return '<User %r>' % (self.email)
