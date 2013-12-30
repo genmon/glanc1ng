@@ -5,7 +5,7 @@ from flask.ext.social.utils import get_provider_or_404
 from sqlalchemy.sql import func
 
 from forms import AddGroupMemberForm, RemoveGroupMemberForm, DoGlanceForm
-from models import User, WhoYouLookinAt, Connection, NoticedGlance, LastSentGlance, LastUnnoticedGlance, UnnoticedGlance
+from models import User, WhoYouLookinAt, Connection, NoticedGlance, LastSentGlance, LastUnnoticedGlance, UnnoticedGlance, SentGlance, ReceivedNoticedGlance
 
 from . import app, db
 import helpers
@@ -18,19 +18,38 @@ def index():
 	if current_user.is_authenticated() is False:
 		return render_template("index_signed_out.html")
 
+	# list of tuples (twitter_name, twitter_id) where twitter_id is None
+	# if that user hasn't registered
+	group = helpers.get_group(user=current_user)
+	senders = helpers.get_received_noticed_glances(user=current_user)
+	senders_dict = dict( [(r.sender_twitter_id, r) for r in senders] )
+
+	# we want an entry in received_glances for every person in group
 	received_glances = []
-	lookin_at = [x.looking_at_twitter_display_name for x in current_user.who_they_lookin_at]
-	noticed = dict( [(n.sender_twitter_display_name, n.when) for n in current_user.noticed_glances] )
-	for sender in lookin_at:
-		received_glances.append( (sender, noticed.get(sender)) )
+	for sender_name, sender_id in group:
+		if sender_id is None:
+			# this member of the group is not registered
+			received_glances.append((sender_name, None))
+		elif received_dict.has_key(sender_id):
+			# this member of the group is registered, and
+			# has also sent a glance at receiver
+			received_glances.append(
+					(sender_name, senders_dict[sender_id].most_recent) )
+		else:
+			# this member of the group is registered, but
+			# has never sent a glance at receiver
+			received_glances_human.append((sender_name, None))
 	
-	last_sent_glance = None
-	if current_user.last_sent_glance is not None:
-		last_sent_glance = current_user.last_sent_glance.when
+	last_sent_glance = helpers.get_most_recent_sent_glance(user=current_user)
 
 	group_energy = helpers.calculate_group_energy(last_sent_glance=last_sent_glance, received_glances=received_glances)
 
 	received_glances_human = [(s, helpers.time_ago_human_readable(w) % s) for (s, w) in received_glances]
+
+	# get count of unnoticed glances
+	unnoticed_count = helpers.get_received_unnoticed_glances_count(
+						user=current_user,
+						db_session=db.session)
 
 	twitter_conn = app.social.twitter.get_connection()
 	current_user_twitter_display_name = twitter_conn.display_name
@@ -50,7 +69,8 @@ def index():
 		current_user_twitter_display_name=current_user_twitter_display_name,
 		group_energy=group_energy,
 		group_size=len(current_user.who_they_lookin_at),
-		group_tweet_text=group_tweet_text)
+		group_tweet_text=group_tweet_text,
+		unnoticed_count=unnoticed_count)
 
 @app.route('/register/<provider_id>', methods=['GET', 'POST'])
 def register(provider_id=None):
@@ -145,11 +165,11 @@ def send_glance():
 	- updates the local cache of twitter friendships if required
 	- saves that a glance was sent by this user
 	- for all twitter friends of this user:
+		- logs an unnoticed glance for that receiver (appears to the
+		  sender anonymously for 24 hour). all do this!
 		- if the friend is a registered user and looking back,
-		  logs a noticed glance for that receiver (appears to the
+		  logs a noticed glance for that receiver too (appears to the
 		  sender named and forever)
-		- otherwise logs an unnoticed glance for that receiver
-		  (appears to the sender anonymously for 24 hour)
 	- commits the session
 	
 	@todo functionality:
@@ -159,8 +179,8 @@ def send_glance():
 	- for all twitter friends of this user:
 		- if the friend is a mutual friend and not looking back,
 		  logs a transitory glance (appears to the sender named
-		  for an hour, then anonymously for 24 hours). This is a
-		  type of unnoticed glance	
+		  for an hour, then anonymously for 24 hours). This is in
+		  addition to the unnoticed glance	
 	"""
 	
 	# check whether we're really sending the glance
@@ -174,13 +194,6 @@ def send_glance():
 	
 	# update the cache of the sender's twitter friends
 	# @todo this needs to also update mutual friendships
-	# @todo I'm getting fails from Heroku on this line
-	# get_provider_or_404('twitter').get_api(), with:
-	# TwitterError: [{u'message': u'Could not authenticate you', u'code': 32}]
-	# could this be because I'm signing into the same Twitter
-	# application in development and production, and so the
-	# key is out of date? In which case, how do I refresh it each
-	# time?
 	commit_required = helpers.update_twitter_friends_cache(
 		twitter_id=sender_twitter_id,
 		twitter_api=get_provider_or_404('twitter').get_api(),
@@ -193,37 +206,43 @@ def send_glance():
 	helpers.log_sent_glance(
 		sender_twitter_id=sender_twitter_id,
 		db_session=db.session) # db not yet committed!
-	
 
 	# loop over all twitter friends of the sender... these are
 	# all receivers
 	receivers = helpers.get_twitter_friends(twitter_id=sender_twitter_id)
+	
+	# loads the twitter IDs of receivers who will notice this
+	will_notice_list = helpers.get_reverse_group_as_twitter_ids(
+									user=current_user)
+	def glance_is_noticed(r):
+		if r in will_notice_list:
+			return True
+		else:
+			return False
+
+	# every receiver gets an unnoticed glance
+	helpers.log_unnoticed_glances(
+		receivers=receivers,
+		db_session=db.session)
 
 	for receiver_twitter_id in receivers:
-		if helpers.glance_is_noticed(
-							sender_user=current_user,
-							receiver_twitter_id=receiver_twitter_id):
+
+		# additionally the receiver might get a noticed or a transitory
+		# glance
+		if glance_is_noticed(receiver_twitter_id):
 			# if the receiver is a registered user and the sender is in the
 			# receiver's group, this glance will be noticed
 			helpers.log_noticed_glance(
 				sender_twitter_id=sender_twitter_id,
 				receiver_twitter_id=receiver_twitter_id,
 				db_session=db.session)
-		
-		else:
-			# the receiver gets an unnoticed glance
-			helpers.log_unnoticed_glance(
-				receiver_twitter_id=receiver_twitter_id,
-				db_session=db.session)
-
+		elif helpers.glance_is_transitory(
+								sender_user=current_user,
+								receiver_twitter_id=receiver_twitter_id):
 			# the glance might also be transitory, in which
 			# case it has a chance of being seen by the user
-			if helpers.glance_is_transitory(
-									sender_user=current_user,
-									receiver_twitter_id=receiver_twitter_id):
-				# @todo add transitory glances
-				pass
-			
+			# @todo add transitory glances
+			pass
 	
 	# commit and finish up
 	db.session.commit()
@@ -346,7 +365,7 @@ def do_glance():
 	return render_template("do_glance_DEBUG.html", will_receive=will_receive, wont_receive=wont_receive)
 
 
-@app.route("/user/remove")
+#@app.route("/user/remove")
 @login_required
 def user_remove():
 	""" Deletes the current user and associated Twitter connections. """
@@ -400,19 +419,17 @@ def stats():
 	stats['mean_formed_group_size'] = "%.1f" % (float(stats['memberships'])/stats['groups'])
 	
 	# sent_glances
-	# from when sent glances weren't counted...
-	sent1 = int(LastSentGlance.query.filter(LastSentGlance.count == None).count())
-	# from after they were counted...
-	sent2 = int(db.session.query(func.sum(LastSentGlance.count)).filter(LastSentGlance.count != None).first()[0])
-	stats['sent_glances'] = sent1 + sent2
+	r = db.session.query(func.sum(SentGlance.count)).filter(SentGlance.count != None).first()[0]
+	if r is None:
+		r = 0
+	stats['sent_glances'] = int(r)
 
 	# noticed_glances
-	# from when noticed glances weren't counted...
-	noticed1 = int(NoticedGlance.query.filter(NoticedGlance.count == None).count())
-	# from after they were counted...
-	noticed2 = int(db.session.query(func.sum(NoticedGlance.count)).filter(NoticedGlance.count != None).first()[0])
-	stats['noticed_glances'] = noticed1 + noticed2
-
+	r = db.session.query(func.sum(ReceivedNoticedGlance.count)).filter(ReceivedNoticedGlance.count != None).first()[0]
+	if r is None:
+		r = 0
+	stats['noticed_glances'] = int(r)
 	
 	return render_template("about_stats.html", **stats)
+
 	

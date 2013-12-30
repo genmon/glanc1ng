@@ -1,8 +1,10 @@
 """ Database commit policy: Helper functions DO NOT commit the db.session,
     and must always have it passed in. """
 
+from sqlalchemy.sql import func
+
 from . import app
-from models import TwitterFriendsCacheLastUpdated, TwitterFriendsCache, SentGlance, ReceivedNoticedGlance, Connection, ReceivedUnnoticedGlance, MostRecentReceivedUnnoticedGlance
+from models import TwitterFriendsCacheLastUpdated, TwitterFriendsCache, SentGlance, ReceivedNoticedGlance, Connection, ReceivedUnnoticedGlance, MostRecentReceivedUnnoticedGlance, WhoYouLookinAt
 
 from dateutil import relativedelta
 from datetime import datetime
@@ -80,6 +82,76 @@ def log_sent_glance(sender_twitter_id=None, db_session=None):
 	return True
 
 
+def get_group(user=None):
+	""" Returns the group as (twitter_name, twitter_id),
+	where the twitter_id is None if the user is not registered. """
+	
+	group = []
+	if user.who_they_lookin_at is not None:
+		for u in user.who_they_lookin_at:
+			display_name = u.looking_at_twitter_display_name
+			conn = Connection().query.filter_by(
+				display_name=display_name).first()
+			if conn is not None:
+				group.append( (display_name, conn.provider_user_id) )
+			else:
+				group.append( (display_name, None) )
+	
+	return group
+
+def get_reverse_group_as_twitter_ids(user=None):
+	""" Returns a list of Twitter IDs of those users who
+	will notice a received glance. """
+	
+	twitter_name = user.connections[0].display_name
+	
+	reverse_group = []
+	receivers = WhoYouLookinAt.query.filter_by(
+			looking_at_twitter_display_name=twitter_name).all()
+	if receivers is not None:
+		reverse_group = [get_twitter_id(r.user) for r in receivers]
+	
+	return reverse_group
+
+def get_received_noticed_glances(user=None):
+	""" Returns a list of ReceivedNoticedGlance objects """
+	
+	twitter_id = get_twitter_id(user=user)
+	
+	received = ReceivedNoticedGlance.query.filter_by(
+		receiver_twitter_id=twitter_id).all()
+	
+	return received
+
+def get_most_recent_sent_glance(user=None):
+	""" Returns the datetime of the most recently sent glance """
+	
+	twitter_id = get_twitter_id(user=user)
+	
+	glance = SentGlance.query.filter_by(twitter_id=twitter_id).first()
+	
+	if glance is None:
+		return None
+	else:
+		return glance.most_recent
+
+def get_received_unnoticed_glances_count(user=None, db_session=None):
+	""" Returns the number of received, unnoticed glances in the last
+	24 hours. """
+
+	twitter_id = get_twitter_id(user=user)
+
+	r = db_session.query(func.sum(ReceivedUnnoticedGlance.count)).filter(
+			ReceivedUnnoticedGlance.count != None,
+			ReceivedUnnoticedGlance.receiver_twitter_id == twitter_id
+			).first()[0]
+
+	if r is None:
+		r = 0
+	r = int(r)
+
+	return r
+
 def glance_is_noticed(sender_user=None, receiver_twitter_id=None):
 	""" For a glance to be noticed by a receiver, they must be
 	(a) signed up, and therefore in Connection; and
@@ -89,7 +161,8 @@ def glance_is_noticed(sender_user=None, receiver_twitter_id=None):
 	noticed = False
 	
 	conn = Connection.query.filter_by(
-			provider_user_id=str(receiver_twitter_id)).first()
+			provider_user_id=str(receiver_twitter_id)
+			).enable_eagerloads(False).first()
 	if conn is not None:
 		receiver_twitter_name = conn.display_name
 		
@@ -133,6 +206,11 @@ def log_noticed_glance(sender_twitter_id=None, receiver_twitter_id=None, db_sess
 	
 	return True
 
+
+def log_unnoticed_glances(receivers=[], db_session=None):
+	for r in receivers:
+		log_unnoticed_glance(receiver_twitter_id=r, db_session=db_session)
+	return True
 
 def log_unnoticed_glance(receiver_twitter_id=None, db_session=None):
 	""" When a receiver is NOT looking at a sender, the glance is
@@ -249,7 +327,7 @@ def time_ago_human_readable(dt=None):
 	
 	ago_string = None
 	if dt is None:
-		ago_string = "You've never noticed %s glance at you"
+		ago_string = "You've never noticed %s glance"
 	else:
 		attrs = ['years', 'months', 'days', 'hours', 'minutes']
 		human_readable = lambda delta: [
@@ -260,7 +338,7 @@ def time_ago_human_readable(dt=None):
 		r = relativedelta.relativedelta(now, dt)
 		
 		if r.years > 0 or r.months > 0:
-			ago_string = "%s last glanced at you over a month ago."
+			ago_string = "You last noticed %s glance over a month ago"
 		
 		ago_suffix = ""
 		if r.days > 0:
@@ -276,6 +354,6 @@ def time_ago_human_readable(dt=None):
 		else:
 			ago_suffix = "%s ago" % pluralise(r.minutes, 'minute')
 		
-		ago_string = "%s last glanced at you " + ago_suffix
+		ago_string = "You last noticed %s glance " + ago_suffix
 	
 	return ago_string

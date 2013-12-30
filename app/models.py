@@ -38,11 +38,11 @@ class User(db.Model, UserMixin):
 	# a user deletion results in the user_id in those tables being
 	# replaced with a null -- which often results in an error.
 	# So user deletion results in data being deleted!
-	who_they_lookin_at = db.relationship('WhoYouLookinAt', backref=db.backref('users', lazy='joined'), cascade="all")
-	noticed_glances = db.relationship('NoticedGlance', backref=db.backref('users', lazy='joined'), cascade="all")
-	last_sent_glance = db.relationship('LastSentGlance', backref=db.backref('users'), cascade="all", uselist=False)
-	unnoticed_glances = db.relationship('UnnoticedGlance', backref=db.backref('users', lazy='joined'), cascade="all")
-	last_unnoticed_glance = db.relationship('LastUnnoticedGlance', backref=db.backref('users'), cascade="all", uselist=False)
+	who_they_lookin_at = db.relationship('WhoYouLookinAt', backref=db.backref('user', lazy='joined'), cascade="all")
+	noticed_glances = db.relationship('NoticedGlance', backref=db.backref('user', lazy='joined'), cascade="all")
+	last_sent_glance = db.relationship('LastSentGlance', backref=db.backref('user'), cascade="all", uselist=False)
+	unnoticed_glances = db.relationship('UnnoticedGlance', backref=db.backref('user', lazy='joined'), cascade="all")
+	last_unnoticed_glance = db.relationship('LastUnnoticedGlance', backref=db.backref('user'), cascade="all", uselist=False)
 
 	def __repr__(self):
 		return '<User %r>' % (self.email)
@@ -54,7 +54,7 @@ class Connection(db.Model):
 	id = db.Column(db.Integer, primary_key=True)
 	user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
 	provider_id = db.Column(db.String(255))
-	provider_user_id = db.Column(db.String(255))
+	provider_user_id = db.Column(db.String(255), index=True)
 	access_token = db.Column(db.String(255))
 	secret = db.Column(db.String(255))
 	display_name = db.Column(db.String(255))
@@ -143,9 +143,9 @@ class LastSentGlance(db.Model):
 
 
 class ReceivedUnnoticedGlance(db.Model):
-	""" If a glance is made and fails to make it as RecievedNoticedGlance
-	because the received isn't looking back at the sender, it gets
-	captured here anonymously. Unnoticed glances are kept only for 1 day,
+	""" When a glance is sent, it is captured here anonymously. All 
+	sent glances are stored here. They might also be noticed or
+	transitory. Unnoticed glances are kept only for 1 day,
 	and I don't want to have a background job flushing the table so we
 	have weird incrementing days and looping hours instead
 	"""

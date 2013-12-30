@@ -7,6 +7,9 @@ from flask.ext.security import Security, SQLAlchemyUserDatastore
 from flask.ext.social import Social, SQLAlchemyConnectionDatastore, login_failed
 from flask.ext.social.utils import get_connection_values_from_oauth_response
 
+from flask.ext.sqlalchemy import get_debug_queries
+from config import DATABASE_QUERY_TIMEOUT
+
 from flask_bootstrap import Bootstrap
 
 # initialization
@@ -52,3 +55,9 @@ def on_login_failed(sender, provider, oauth_response):
 def social_login_error(error):
 	return redirect(url_for('register', provider_id=error.provider.id, login_failed=1))
 
+@app.after_request
+def after_request(response):
+	for query in get_debug_queries():
+		if query.duration >= DATABASE_QUERY_TIMEOUT:
+			app.logger.warning("SLOW QUERY: %s\nParameters: %s\nDuration: %fs\nContext: %s\n" % (query.statement, query.parameters, query.duration, query.context))
+	return response

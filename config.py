@@ -13,6 +13,10 @@ if os.environ.get('DATABASE_URL') is None:
 else:
 	SQLALCHEMY_DATABASE_URI = os.environ['DATABASE_URL']
 
+SQLALCHEMY_RECORD_QUERIES = True
+# slow database query threshold (in seconds)
+DATABASE_QUERY_TIMEOUT = 0.05
+
 SQLALCHEMY_MIGRATE_REPO = os.path.join(basedir, 'db_repository')
 
 CSRF_ENABLED = True

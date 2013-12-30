@@ -8,19 +8,18 @@
 		<img class="img-responsive" src="{{ url_for('static', filename="eye/%s.png" % group_energy) }}" width="440" height="440">	
 	</div>
 	<div class="col-md-6">
-	{% if group_size == 0 %}
-
-		<p class="lead">Glanc1ng is an online experiment in eye contact and small groups.</p>
+	{% if show_group %}
+		<h1>{{ unnoticed_count }} glance{% if unnoticed_count != 1 %}s{% endif %} <small>from your Twitter followers in the last 24 hours</small></h1>
+			
+		<p>&nbsp;</p>
 		
-		<p>You need friends to glance at!</p>
-
-		<p>Go to <a href="{{ url_for('group') }}">Edit group</a> and add one or more people.</p>
+		{% if group_size == 0 %}
 		
-	{% else %}
-
-		{% if show_group %}
-
-		<h1>Your group</h1>
+		<p>Pay special attention to a few friends by adding them to your group. Go to <a href="{{ url_for('group') }}">Edit group</a> and add one or more people now.</p>
+		
+		{% else %}
+		
+		<p>People you're paying special attention to:</p>
 		
 		<table class="table">
 			{% for sender, when in received_glances %}
@@ -29,47 +28,51 @@
 				<td>{{ when }}</td>
 			</tr>
 			{% endfor %}
-			<tr>
+			<!-- ><tr>
 				<td>{{ current_user_twitter_display_name }}</td>
 				<td>You last glanced just now</td>
-			</tr>
+			</tr> -->
 		</table>
+
+			{% if group_energy == 0 %}
+				<p>There's no recent activity!</p>
+			{% elif group_energy == 1 %}
+				<p>Group energy is kinda low.</p>
+			{% elif group_energy == 2 %}
+				<p>Energy is picking up.</p>
+			{% elif group_energy == 3 %}
+				<p>Almost at maximum group energy.</p>
+			{% elif group_energy == 4 %}
+				<div class="panel panel-default">
+					<div class="panel-body">
+						<p><strong>MAXIMUM GROUP ENERGY!</strong> Start a conversation!</p>
+						<a href="https://twitter.com/intent/tweet?via=glanc1ng&amp;url=http://&amp;text={{ group_tweet_text|urlencode }}" class="twitter-share-button" data-lang="en" data-size="large" data-count="none">Tweet</a>
+					</div>
+				</div>
+			{% endif %}
+
+			<p>&nbsp;</p>
+
+		{% endif %}
 		
-		{% else %}
+	{% else %}
 
 		<p class="lead">Glanc1ng is an online experiment in eye contact and small groups.</p>
-		
-		{% endif %}
-		
-		{% if group_energy == 0 %}
-			<p>There's no recent activity!</p>
-		{% elif group_energy == 1 %}
-			<p>Group energy is kinda low.</p>
-		{% elif group_energy == 2 %}
-			<p>Energy is picking up.</p>
-		{% elif group_energy == 3 %}
-			<p>Almost at maximum group energy.</p>
-		{% elif group_energy == 4 %}
-			<div class="panel panel-default">
-				<div class="panel-body">
-					<p><strong>MAXIMUM GROUP ENERGY!</strong> Start a conversation!</p>
-					<a href="https://twitter.com/intent/tweet?via=glanc1ng&amp;url=http://&amp;text={{ group_tweet_text|urlencode }}" class="twitter-share-button" data-lang="en" data-size="large" data-count="none">Tweet</a>
-				</div>
-			</div>
-		{% endif %}
+				
+	{% endif %}
 
-		{% if show_group %}
-		<p>Glance to see if anything's changed.</p>
-		{% else %}
-		<p>Glance now to see your group.</p>
-		{% endif %}
-		
-		<form method="POST" action="{{ url_for('do_glance') }}">
-			{{ glance_form.hidden_tag() }}
-			<button type="submit" class="btn btn-primary">Glance{% if show_group %} again{% endif %}</button>
-		</form>		
-		
-		{% endif %}
+
+	{% if show_group %}
+	<p>Glance again to see if your Twitter followers have glanced more.</p>
+	{% else %}
+	<p>Glance now to see how much your Twitter followers have been glancing.</p>
+	{% endif %}
+	
+	<form method="POST" action="{{ url_for('send_glance') }}">
+		{{ glance_form.hidden_tag() }}
+		<button type="submit" class="btn btn-primary">Glance{% if show_group %} again{% endif %}</button>
+	</form>		
+	
 	</div>
 </div>
 
