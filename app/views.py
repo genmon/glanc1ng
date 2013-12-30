@@ -152,9 +152,7 @@ def group_member_remove(member=None):
 		
 	return redirect(url_for('group'))
 
-# will replace do_glance eventually
-# @todo remove GET and remove the "if False" below
-@app.route("/send_glance", methods=['GET', 'POST'])
+@app.route("/send_glance", methods=['POST'])
 @login_required
 def send_glance():
 	""" Sends a glance to all Twitter friends of the logged-in user.
@@ -185,7 +183,7 @@ def send_glance():
 	
 	# check whether we're really sending the glance
 	glance_form = DoGlanceForm()
-	if False and not (request.method == 'POST' and glance_form.validate()):
+	if not (request.method == 'POST' and glance_form.validate()):
 		flash("Glance not successful", "error")
 		return redirect(url_for('index'))
 	

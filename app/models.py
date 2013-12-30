@@ -83,7 +83,7 @@ class ReceivedUnnoticedGlance(db.Model):
 
 	__tablename__ = "received_unnoticed_glance"
 
-	receiver_twitter_id = db.Column(db.Integer, primary_key=True)
+	receiver_twitter_id = db.Column(db.String(255), primary_key=True)
 	when = db.Column(db.DateTime(), index=True)
 
 class ReceivedNoticedGlance(db.Model):
@@ -95,8 +95,8 @@ class ReceivedNoticedGlance(db.Model):
 	__tablename__ = "received_noticed_glance"
 	__table_args__ = (db.UniqueConstraint('receiver_twitter_id', 'sender_twitter_id'),)
 
-	receiver_twitter_id = db.Column(db.Integer, primary_key=True)
-	sender_twitter_id = db.Column(db.Integer, primary_key=True)
+	receiver_twitter_id = db.Column(db.String(255), primary_key=True)
+	sender_twitter_id = db.Column(db.String(255), primary_key=True)
 	most_recent = db.Column(db.DateTime())
 	count = db.Column(db.Integer, default=1)
 
@@ -105,7 +105,7 @@ class SentGlance(db.Model):
 	
 	__tablename__ = "sent_glance"
 	
-	twitter_id = db.Column(db.Integer, primary_key=True)
+	twitter_id = db.Column(db.String(255), primary_key=True)
 	most_recent = db.Column(db.DateTime(), nullable=False)
 	count = db.Column(db.Integer, nullable=False)
 
@@ -115,7 +115,7 @@ class TwitterFriendsCacheLastUpdated(db.Model):
 	
 	__tablename__ = "twitter_friends_cache_last_updated"
 	
-	twitter_id = db.Column(db.Integer, primary_key=True)
+	twitter_id = db.Column(db.String(255), primary_key=True)
 	when = db.Column(db.DateTime(), nullable=False)
 
 class TwitterFriendsCache(db.Model):
@@ -124,5 +124,5 @@ class TwitterFriendsCache(db.Model):
 	__tablename__ = "twitter_friends_cache"
 	__table_args__ = (db.UniqueConstraint('twitter_id', 'friend_twitter_id'),)
 	
-	twitter_id = db.Column(db.Integer, primary_key=True)
+	twitter_id = db.Column(db.String(255), primary_key=True)
 	friend_twitter_id = db.Column(db.Integer, primary_key=True)

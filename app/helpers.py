@@ -14,7 +14,7 @@ from random import random
 def get_twitter_id(user=None):
 	""" For a user object, return the Twitter ID.
 	@todo be robust against multiple social network connections """
-	return int(user.connections[0].provider_user_id)
+	return user.connections[0].provider_user_id
 
 def update_twitter_friends_cache(twitter_id=None, twitter_api=None, db_session=None):
 	""" For a twitter ID, update the database table containing the
