@@ -39,10 +39,6 @@ class User(db.Model, UserMixin):
 	# replaced with a null -- which often results in an error.
 	# So user deletion results in data being deleted!
 	who_they_lookin_at = db.relationship('WhoYouLookinAt', backref=db.backref('user', lazy='joined'), cascade="all")
-	noticed_glances = db.relationship('NoticedGlance', backref=db.backref('user', lazy='joined'), cascade="all")
-	last_sent_glance = db.relationship('LastSentGlance', backref=db.backref('user'), cascade="all", uselist=False)
-	unnoticed_glances = db.relationship('UnnoticedGlance', backref=db.backref('user', lazy='joined'), cascade="all")
-	last_unnoticed_glance = db.relationship('LastUnnoticedGlance', backref=db.backref('user'), cascade="all", uselist=False)
 
 	def __repr__(self):
 		return '<User %r>' % (self.email)
@@ -78,69 +74,6 @@ class WhoYouLookinAt(db.Model):
 	
 	user_id = db.Column(db.Integer, db.ForeignKey('users.id'), primary_key=True)
 	looking_at_twitter_display_name = db.Column(db.String(255), primary_key=True)
-
-class NoticedGlance(db.Model):
-	""" When a user makes a glance, they're definitely signed up. And
-	since SENT glances are only noticed and recorded if the RECEIVER
-	happens to be looking in that direction, we know that the RECEIVER
-	is signed up too.
-	
-	This table is used by a user to show how many glances they have
-	received. But by the time the receiver logs in, the sender might
-	not be on the system any longer.
-	
-	So for noticed glances:
-	
-	- for every RECEIVER user_id
-	- we store a list of SENDER twitter display names
-	
-	(and a count of how many times this particular glance has been
-	noticed.)
-	"""
-
-	__tablename__ = "noticed_glance"
-	__table_args__ = (db.UniqueConstraint('receiver_user_id', 'sender_twitter_display_name'),)
-	
-	receiver_user_id = db.Column(db.Integer, db.ForeignKey('users.id'), primary_key=True)
-	sender_twitter_display_name = db.Column(db.String(255), primary_key=True)
-	when = db.Column(db.DateTime())
-	count = db.Column(db.Integer, default=1)
-
-class UnnoticedGlance(db.Model):
-	""" If a glance is made and fails to make it as NoticedGlance
-	because the received isn't looking back at the sender, it gets
-	captured here anonymously. Unnoticed glances are kept only for 1 day,
-	and I don't want to have a background job flushing the table so we
-	have weird incrementing days and looping hours instead
-	"""
-	
-	__tablename__ = "unnoticed_glance"
-	__table_args__ = (db.UniqueConstraint('receiver_user_id', 'hour'),)
-	
-	receiver_user_id = db.Column(db.Integer, db.ForeignKey('users.id'), primary_key=True)
-	hour = db.Column(db.Integer, primary_key=True)
-	ordinal_day = db.Column(db.Integer)
-	count = db.Column(db.Integer)
-
-class LastUnnoticedGlance(db.Model):
-	""" Stores the most recent unnoticed glance """
-	
-	__tablename__ = "last_unnoticed_glance"
-	
-	receiver_user_id = db.Column(db.Integer, db.ForeignKey('users.id'), primary_key=True)
-	when = db.Column(db.DateTime())
-
-class LastSentGlance(db.Model):
-	""" Records the most recent glance sent by any given user.
-	
-	@todo delete when refactoring! """
-	
-	__tablename__ = "last_sent_glance"
-	
-	sender_user_id = db.Column(db.Integer, db.ForeignKey('users.id'), primary_key=True)
-	when = db.Column(db.DateTime())
-	count = db.Column(db.Integer, default=1)
-
 
 class ReceivedUnnoticedGlance(db.Model):
 	""" When a glance is sent, it is captured here anonymously. All 

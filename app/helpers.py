@@ -141,10 +141,21 @@ def get_received_unnoticed_glances_count(user=None, db_session=None):
 
 	twitter_id = get_twitter_id(user=user)
 
-	r = db_session.query(func.sum(ReceivedUnnoticedGlance.count)).filter(
-			ReceivedUnnoticedGlance.count != None,
-			ReceivedUnnoticedGlance.receiver_twitter_id == twitter_id
-			).first()[0]
+	# datetime
+	now = datetime.utcnow()
+	hour = now.hour
+	ordinal_day = now.toordinal()
+	# for the last 24 hours, we need to get everything where the ordinal_day
+	# is today, plus from the previous ordinal day where that_hr >= this_hr
+
+	r = db_session.query(func.sum(ReceivedUnnoticedGlance.count)) \
+		.filter(ReceivedUnnoticedGlance.receiver_twitter_id == twitter_id) \
+		.filter( (ReceivedUnnoticedGlance.ordinal_day == ordinal_day) \
+				  | \
+			(	(ReceivedUnnoticedGlance.ordinal_day == ordinal_day - 1) \
+				 & \
+				(ReceivedUnnoticedGlance.hour >= hour))) \
+		.first()[0]
 
 	if r is None:
 		r = 0
