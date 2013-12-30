@@ -31,9 +31,16 @@ class User(db.Model, UserMixin):
 		backref=db.backref('users', lazy='dynamic'))
 	connections = db.relationship('Connection',
 		backref=db.backref('user', lazy='joined'), cascade="all")
-	who_they_lookin_at = db.relationship('WhoYouLookinAt', backref=db.backref('users', lazy='joined'))
-	noticed_glances = db.relationship('NoticedGlance', backref=db.backref('users', lazy='joined'))
-	last_sent_glance = db.relationship('LastSentGlance', backref=db.backref('users'), uselist=False)
+		
+	# The 'cascade="all"' in the following relationships means that
+	# the rows using the user_id are DELETED if this user is
+	# deleted! The alternative is to leave the cascade out, and then
+	# a user deletion results in the user_id in those tables being
+	# replaced with a null -- which often results in an error.
+	# So user deletion results in data being deleted!
+	who_they_lookin_at = db.relationship('WhoYouLookinAt', backref=db.backref('users', lazy='joined'), cascade="all")
+	noticed_glances = db.relationship('NoticedGlance', backref=db.backref('users', lazy='joined'), cascade="all")
+	last_sent_glance = db.relationship('LastSentGlance', backref=db.backref('users'), cascade="all", uselist=False)
 
 	def __repr__(self):
 		return '<User %r>' % (self.email)

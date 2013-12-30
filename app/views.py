@@ -83,7 +83,7 @@ def register(provider_id=None):
 
 	return abort(404)
 
-#@app.route("/twitter_friends")
+@app.route("/twitter_friends")
 @login_required
 def twitter_friends():
 	twitter_api = get_provider_or_404('twitter').get_api()
@@ -134,7 +134,7 @@ def group_member_remove(member=None):
 
 # will replace do_glance eventually
 # @todo remove GET and remove the "if False" below
-#@app.route("/send_glance", methods=['GET', 'POST'])
+@app.route("/send_glance", methods=['GET', 'POST'])
 @login_required
 def send_glance():
 	""" Sends a glance to all Twitter friends of the logged-in user.
@@ -344,6 +344,17 @@ def do_glance():
 	return redirect(url_for("index"))
 
 	return render_template("do_glance_DEBUG.html", will_receive=will_receive, wont_receive=wont_receive)
+
+
+@app.route("/user/remove")
+@login_required
+def user_remove():
+	""" Deletes the current user and associated Twitter connections. """
+	ds = app.security.datastore
+	ds.delete_user(current_user)
+	ds.commit()
+	flash("User deleted")
+	return redirect(url_for('index'))
 
 
 @app.route("/about")
