@@ -15,7 +15,7 @@ else:
 
 SQLALCHEMY_RECORD_QUERIES = True
 # slow database query threshold (in seconds)
-DATABASE_QUERY_TIMEOUT = 0.02
+DATABASE_QUERY_TIMEOUT = 0.05
 
 SQLALCHEMY_MIGRATE_REPO = os.path.join(basedir, 'db_repository')
 

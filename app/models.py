@@ -78,26 +78,13 @@ class WhoYouLookinAt(db.Model):
 class ReceivedUnnoticedGlance(db.Model):
 	""" When a glance is sent, it is captured here anonymously. All 
 	sent glances are stored here. They might also be noticed or
-	transitory. Unnoticed glances are kept only for 1 day,
-	and I don't want to have a background job flushing the table so we
-	have weird incrementing days and looping hours instead
+	transitory. Unnoticed glances are kept only for 1 day.
 	"""
 
 	__tablename__ = "received_unnoticed_glance"
-	__table_args__ = (db.UniqueConstraint('receiver_twitter_id', 'hour'),)
 
 	receiver_twitter_id = db.Column(db.Integer, primary_key=True)
-	hour = db.Column(db.Integer, primary_key=True)
-	ordinal_day = db.Column(db.Integer)
-	count = db.Column(db.Integer)
-
-class MostRecentReceivedUnnoticedGlance(db.Model):
-	""" Stores the most recent unnoticed glance """
-
-	__tablename__ = "most_recent_received_unnoticed_glance"
-
-	receiver_twitter_id = db.Column(db.Integer, primary_key=True)
-	when = db.Column(db.DateTime())
+	when = db.Column(db.DateTime(), index=True)
 
 class ReceivedNoticedGlance(db.Model):
 	""" A count of all glances received by a user (identified

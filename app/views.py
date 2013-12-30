@@ -224,6 +224,11 @@ def send_glance():
 	helpers.log_unnoticed_glances(
 		receivers=receivers,
 		db_session=db.session)
+	# and we need to delete old unnoticed glances too
+	helpers.sweep_unnoticed_glances(
+		receivers=receivers,
+		db_session=db.session)
+	
 
 	for receiver_twitter_id in receivers:
 

@@ -4,10 +4,12 @@
 from sqlalchemy.sql import func
 
 from . import app
-from models import TwitterFriendsCacheLastUpdated, TwitterFriendsCache, SentGlance, ReceivedNoticedGlance, Connection, ReceivedUnnoticedGlance, MostRecentReceivedUnnoticedGlance, WhoYouLookinAt
+from models import TwitterFriendsCacheLastUpdated, TwitterFriendsCache, SentGlance, ReceivedNoticedGlance, Connection, ReceivedUnnoticedGlance, WhoYouLookinAt
 
 from dateutil import relativedelta
-from datetime import datetime
+from datetime import datetime, timedelta
+
+from random import random
 
 def get_twitter_id(user=None):
 	""" For a user object, return the Twitter ID.
@@ -141,21 +143,12 @@ def get_received_unnoticed_glances_count(user=None, db_session=None):
 
 	twitter_id = get_twitter_id(user=user)
 
-	# datetime
-	now = datetime.utcnow()
-	hour = now.hour
-	ordinal_day = now.toordinal()
-	# for the last 24 hours, we need to get everything where the ordinal_day
-	# is today, plus from the previous ordinal day where that_hr >= this_hr
+	yesterday = datetime.utcnow() - timedelta(days=1)
 
-	r = db_session.query(func.sum(ReceivedUnnoticedGlance.count)) \
+	r = ReceivedUnnoticedGlance.query \
 		.filter(ReceivedUnnoticedGlance.receiver_twitter_id == twitter_id) \
-		.filter( (ReceivedUnnoticedGlance.ordinal_day == ordinal_day) \
-				  | \
-			(	(ReceivedUnnoticedGlance.ordinal_day == ordinal_day - 1) \
-				 & \
-				(ReceivedUnnoticedGlance.hour >= hour))) \
-		.first()[0]
+		.filter(ReceivedUnnoticedGlance.when >= yesterday) \
+		.count()
 
 	if r is None:
 		r = 0
@@ -219,68 +212,35 @@ def log_noticed_glance(sender_twitter_id=None, receiver_twitter_id=None, db_sess
 
 
 def log_unnoticed_glances(receivers=[], db_session=None):
-	for r in receivers:
-		log_unnoticed_glance(receiver_twitter_id=r, db_session=db_session)
-	return True
-
-def log_unnoticed_glance(receiver_twitter_id=None, db_session=None):
 	""" When a receiver is NOT looking at a sender, the glance is
 	unnoticed. This means it is logged anonymously so an aggregate
 	score can be shown for 24 hours. (The glance might also be
 	transitory, in which case a name will be shown, but that's
-	dealt with elsewhere.)
+	dealt with elsewhere.) """
 	
-	To avoid having to sweep the database, each receiver can have a
-	maximum of 24 rows in this table: one for each hour of the day.
-	By each hour, the ordinal day (1 = first day of the current
-	Gregorian calendar, and it increments every day since) is also
-	stored. When the table is consulted, only hours in the last 24
-	hours are looked at.
-	"""
-
-	# timing information
 	now = datetime.utcnow()
-	hour = now.hour
-	ordinal_day = now.toordinal()
 	
-	log = ReceivedUnnoticedGlance.query.filter_by(
-		receiver_twitter_id = receiver_twitter_id,
-		hour = hour).first()
-	
-	if log is not None:
-		# if there's already a record for this Twitter ID and this
-		# hour in the table, it might be current or it might be old
-		if log.ordinal_day == ordinal_day:
-			# it's current, update it
-			log.count += 1
-		else:
-			# it's old, replace it
-			log.ordinal_day = ordinal_day
-			log.count = 1
-		db_session.merge(log)
-	else:
-		# there's no record, so create one
+	for r in receivers:
 		log = ReceivedUnnoticedGlance(
-			receiver_twitter_id = receiver_twitter_id,
-			hour = hour,
-			ordinal_day = ordinal_day,
-			count = 1)
+				receiver_twitter_id=r,
+				when=now)
 		db_session.add(log)
 
-	# update the table which shows when the last unnoticed glance
-	# was received
-	glance = MostRecentReceivedUnnoticedGlance.query.filter_by(
-		receiver_twitter_id = receiver_twitter_id).first()
-	if glance is not None:
-		glance.when = datetime.utcnow()
-		db_session.merge(glance)
-	else:
-		glance = MostRecentReceivedUnnoticedGlance(
-			receiver_twitter_id = receiver_twitter_id,
-			when = datetime.utcnow())
-		db_session.add(glance)
+def sweep_unnoticed_glances(receivers=[], db_session=None):
+	""" Since we have no background workers, we have to make sure
+	the unnoticed glances table doesn't get over full. This
+	function deletes old records for 1/10 of the receivers. """
 
-	return True
+	yesterday = datetime.utcnow() - timedelta(days=1)
+	
+	for r in receivers:
+		if random < 0.9:
+			pass
+		
+		ReceivedUnnoticedGlance.query \
+			.filter(ReceivedUnnoticedGlance.receiver_twitter_id == r) \
+			.filter(ReceivedUnnoticedGlance.when < yesterday) \
+			.delete()	
 
 
 def calculate_group_energy(last_sent_glance=None, received_glances=[]):
