@@ -52,6 +52,14 @@ def index():
 						user=current_user,
 						db_session=db.session)
 
+	# get list of Twitter display names of transitory glances
+	# this returns *all* glances from Twitter followers who are also friends,
+	# so strip out the ones in the user's group before displaying
+	all_transitory = helpers.get_received_transitory_glances(
+						user=current_user)
+	group_names = [g[0] for g in group]
+	transitory_glances = [x for x in all_transitory if x not in group_names]
+
 	twitter_conn = app.social.twitter.get_connection()
 	current_user_twitter_display_name = twitter_conn.display_name
 
@@ -71,7 +79,8 @@ def index():
 		group_energy=group_energy,
 		group_size=len(current_user.who_they_lookin_at),
 		group_tweet_text=group_tweet_text,
-		unnoticed_count=unnoticed_count)
+		unnoticed_count=unnoticed_count,
+		transitory_glances=transitory_glances)
 
 @app.route('/register/<provider_id>', methods=['GET', 'POST'])
 def register(provider_id=None):
@@ -203,7 +212,6 @@ def send_glance():
 	sender_twitter_id = helpers.get_twitter_id(user=current_user)
 	
 	# update the cache of the sender's twitter friends
-	# @todo this needs to also update mutual friendships
 	commit_required = helpers.update_twitter_friends_cache(
 		twitter_id=sender_twitter_id,
 		twitter_api=get_provider_or_404('twitter').get_api(),
@@ -218,49 +226,48 @@ def send_glance():
 		db_session=db.session) # db not yet committed!
 
 	# loop over all twitter friends of the sender... these are
-	# all receivers
+	# all receivers. Returns [(twitter_id, is_mutual),]
 	receivers = helpers.get_twitter_friends(twitter_id=sender_twitter_id)
 	
 	# loads the twitter IDs of receivers who will notice this
 	will_notice_list = helpers.get_reverse_group_as_twitter_ids(
 									user=current_user)
-	def glance_is_noticed(r):
-		if r in will_notice_list:
-			return True
-		else:
-			return False
+	print will_notice_list
+	glance_is_noticed = lambda r: r in will_notice_list
 
 	# every receiver gets an unnoticed glance
 	helpers.log_unnoticed_glances(
-		receivers=receivers,
+		receivers=[r[0] for r in receivers],
 		db_session=db.session)
 	# and we need to delete old unnoticed glances too
 	helpers.sweep_unnoticed_glances(
-		receivers=receivers,
+		receivers=[r[0] for r in receivers],
 		db_session=db.session)
 
-	for receiver_twitter_id in receivers:
+	for receiver_twitter_id, is_mutual in receivers:
 
 		# additionally the receiver might get a noticed or a transitory
 		# glance
 		if glance_is_noticed(receiver_twitter_id):
 			# if the receiver is a registered user and the sender is in the
 			# receiver's group, this glance will be noticed
+			print "%s will notice" % receiver_twitter_id
 			helpers.log_noticed_glance(
 				sender_twitter_id=sender_twitter_id,
 				receiver_twitter_id=receiver_twitter_id,
 				db_session=db.session)
+		else:
+			print "%s won't notice" % receiver_twitter_id
 
-		if helpers.glance_is_transitory(
-							sender_user=current_user,
-							receiver_twitter_id=receiver_twitter_id):
+		if is_mutual:
 			# transitory glances are those glances sent to twitter
 			# friends where the friendship is mutual. in that case, the
 			# receiver notices the glance temporarily, even if the sender
 			# is not in the receiver's group
-
-			# @todo add transitory glances
-			pass
+			helpers.log_transitory_glance(
+				sender_twitter_id=sender_twitter_id,
+				receiver_twitter_id=receiver_twitter_id,
+				db_session=db.session)
 	
 	# commit and finish up
 	db.session.commit()

@@ -100,6 +100,21 @@ class ReceivedNoticedGlance(db.Model):
 	most_recent = db.Column(db.DateTime())
 	count = db.Column(db.Integer, default=1)
 
+class ReceivedTransitoryGlance(db.Model):
+	""" A count of all transitory glances received by a user
+	(identified	by Twitter ID). To receive a glance, the receiver
+	and sender must be mutual friends on Twitter. The glance is
+	visible only for 24 hours
+	"""
+
+	__tablename__ = "received_transitory_glance"
+	__table_args__ = (db.UniqueConstraint('receiver_twitter_id', 'sender_twitter_id'),)
+
+	receiver_twitter_id = db.Column(db.String(255), primary_key=True)
+	sender_twitter_id = db.Column(db.String(255), primary_key=True)
+	most_recent = db.Column(db.DateTime())
+	count = db.Column(db.Integer, default=1)
+
 class SentGlance(db.Model):
 	""" Records sent glances sent by a given user """
 	

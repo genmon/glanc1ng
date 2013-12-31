@@ -4,7 +4,7 @@
 from sqlalchemy.sql import func
 
 from . import app
-from models import TwitterFriendsCacheLastUpdated, TwitterFriendsCache, SentGlance, ReceivedNoticedGlance, Connection, ReceivedUnnoticedGlance, WhoYouLookinAt
+from models import TwitterFriendsCacheLastUpdated, TwitterFriendsCache, SentGlance, ReceivedNoticedGlance, Connection, ReceivedUnnoticedGlance, WhoYouLookinAt, ReceivedTransitoryGlance
 
 from exttwitter import ConnectionUser, ShowConnections
 
@@ -66,14 +66,15 @@ def update_twitter_friends_cache(twitter_id=None, twitter_api=None, db_session=N
 
 
 def get_twitter_friends(twitter_id=None):
-	""" Returns Twitter IDs of all the friends of this user """
+	""" Returns list of (twitter_id, is_mutual) of all the friends
+	of this user """
 	friends_q = TwitterFriendsCache.query.filter_by(
 						twitter_id = twitter_id).all()
 	
 	if friends_q is None:
 		friends = []
 	else:
-		friends = [f.friend_twitter_id for f in friends_q]
+		friends = [(f.friend_twitter_id, f.is_mutual) for f in friends_q]
 	
 	return friends
 
@@ -140,6 +141,28 @@ def get_received_noticed_glances(user=None):
 	
 	return received
 
+def get_received_transitory_glances(user=None):
+	""" Returns a list of Twitter names of valid transitory glances """
+
+	yesterday = datetime.utcnow() - timedelta(days=1)
+
+	twitter_id = get_twitter_id(user=user)
+
+	received = ReceivedTransitoryGlance.query \
+		.filter_by(receiver_twitter_id=twitter_id) \
+		.filter(ReceivedTransitoryGlance.most_recent >= yesterday) \
+		.all()
+
+	transitory = []
+	for r in received:
+		conn = Connection.query.filter_by(
+				provider_user_id=str(r.sender_twitter_id)
+				).enable_eagerloads(False).first()
+		if conn is not None:
+			transitory.append(conn.display_name)
+
+	return transitory
+
 def get_most_recent_sent_glance(user=None):
 	""" Returns the datetime of the most recently sent glance """
 	
@@ -197,11 +220,6 @@ def glance_is_noticed(sender_user=None, receiver_twitter_id=None):
 
 
 
-def glance_is_transitory(sender_user=None, receiver_twitter_id=None):
-	return False
-
-
-
 def log_noticed_glance(sender_twitter_id=None, receiver_twitter_id=None, db_session=None):
 	""" Logs a received and NOTICED glance to the database, counting up. """
 	
@@ -225,6 +243,33 @@ def log_noticed_glance(sender_twitter_id=None, receiver_twitter_id=None, db_sess
 	
 	return True
 
+
+def log_transitory_glance(sender_twitter_id=None, receiver_twitter_id=None, db_session=None):
+	""" Logs a transitory glance to the database (only appears for 24 hours).
+	By necessity, the sender_twitter_id appears in connections... unless
+	they've deleted their account. """
+
+	# @todo refactor this with log_noticed_glance
+	
+	now = datetime.utcnow()
+	
+	glance = ReceivedTransitoryGlance.query.filter_by(
+				sender_twitter_id=sender_twitter_id,
+				receiver_twitter_id=receiver_twitter_id).first()
+	
+	if glance is not None:
+		glance.most_recent = now
+		glance.count += 1
+		db_session.merge(glance)
+	else:
+		glance = ReceivedTransitoryGlance(
+					sender_twitter_id=sender_twitter_id,
+					receiver_twitter_id=receiver_twitter_id,
+					most_recent=now,
+					count=1)
+		db_session.add(glance)
+	
+	return True
 
 # @todo fix the query here, it's a crazy slow call... takes a second
 # to do the multirow insert. would moving it offline help? or into
@@ -305,7 +350,7 @@ def calculate_group_energy(last_sent_glance=None, received_glances=[]):
 
 def pluralise(num, singular):
 	if num == 0:
-		return "no %ss" % singular
+		return "0 %ss" % singular
 	elif num == 1:
 		return "1 %s" % singular
 	else:

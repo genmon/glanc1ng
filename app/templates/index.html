@@ -55,6 +55,17 @@
 
 		{% endif %}
 		
+		{% if transitory_glances %}
+		<p>Other Twitter friends who have glanced in the last 24 hours include:</p>
+		<ul>
+			{% for t in transitory_glances %}
+			<li>{{ t }}</li>
+			{% endfor %}
+		</ul>
+		<p>(Maybe add them to your group so you always notice?)</p>
+		<p>&nbsp;</p>
+		{% endif %}
+		
 	{% else %}
 
 		<p class="lead">Glanc1ng is an online experiment in eye contact and small groups.</p>
