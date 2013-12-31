@@ -11,6 +11,7 @@ from . import app, db
 import helpers
 
 from datetime import datetime
+import types
 
 @app.route("/index")
 @app.route("/")
@@ -106,13 +107,20 @@ def register(provider_id=None):
 @app.route("/twitter_friends")
 @login_required
 def twitter_friends():
+	from exttwitter import Relationship, RelationshipUser, ShowFriendships
+	
 	twitter_api = get_provider_or_404('twitter').get_api()
+	twitter_api.ShowFriendships = types.MethodType(ShowFriendships, twitter_api)
 	twitter_conn = app.social.twitter.get_connection()
-	print twitter_conn.provider_user_id
 	
 	friends = twitter_api.GetFriendIDs(user_id=twitter_conn.provider_user_id)
+
+	# test ShowFriendships for just one friend
+	friendship = twitter_api.ShowFriendships(
+				source_id=twitter_conn.provider_user_id,
+				target_id=friends[0])
 	
-	return render_template("twitter_friends.html", twitter_friends=friends)
+	return render_template("twitter_friends.html", friendship=friendship, twitter_friends=friends)
 
 @app.route("/group", methods=['GET', 'POST'])
 @login_required
@@ -226,7 +234,6 @@ def send_glance():
 	helpers.sweep_unnoticed_glances(
 		receivers=receivers,
 		db_session=db.session)
-	
 
 	for receiver_twitter_id in receivers:
 
@@ -239,11 +246,15 @@ def send_glance():
 				sender_twitter_id=sender_twitter_id,
 				receiver_twitter_id=receiver_twitter_id,
 				db_session=db.session)
-		elif helpers.glance_is_transitory(
-								sender_user=current_user,
-								receiver_twitter_id=receiver_twitter_id):
-			# the glance might also be transitory, in which
-			# case it has a chance of being seen by the user
+
+		if helpers.glance_is_transitory(
+							sender_user=current_user,
+							receiver_twitter_id=receiver_twitter_id):
+			# transitory glances are those glances sent to twitter
+			# friends where the friendship is mutual. in that case, the
+			# receiver notices the glance temporarily, even if the sender
+			# is not in the receiver's group
+
 			# @todo add transitory glances
 			pass
 	

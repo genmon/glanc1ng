@@ -3,6 +3,8 @@
 {% block title %}Twitter Friends{% endblock %}
 {% block content %}
 
+<p>Friendship: {{ friendship }}</p>
+
 <ol>
 {% for friend in twitter_friends %}
 	<li>{{ friend }}</li>
