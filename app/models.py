@@ -126,3 +126,5 @@ class TwitterFriendsCache(db.Model):
 	
 	twitter_id = db.Column(db.String(255), primary_key=True)
 	friend_twitter_id = db.Column(db.String(255), primary_key=True)
+	is_mutual = db.Column(db.Boolean(), default=False, nullable=False)
+

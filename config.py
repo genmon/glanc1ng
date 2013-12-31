@@ -4,6 +4,9 @@
 # I've also done heroku config:set x=1
 # for TWITTER_CONSUMER_KEY and TWITTER_CONSUMER_SECRET
 
+# hobby-dev database is HEROKU_POSTGRESQL_CRIMSON_URL
+# hobby-basic database is HEROKU_POSTGRESQL_COPPER_URL
+
 import os
 basedir = os.path.abspath(os.path.dirname(__file__))
 
