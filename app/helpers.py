@@ -6,9 +6,12 @@ from sqlalchemy.sql import func
 from . import app
 from models import TwitterFriendsCacheLastUpdated, TwitterFriendsCache, SentGlance, ReceivedNoticedGlance, Connection, ReceivedUnnoticedGlance, WhoYouLookinAt
 
+from exttwitter import ConnectionUser, ShowConnections
+
 from dateutil import relativedelta
 from datetime import datetime, timedelta
 
+import types
 from random import random
 
 def get_twitter_id(user=None):
@@ -36,15 +39,27 @@ def update_twitter_friends_cache(twitter_id=None, twitter_api=None, db_session=N
 		# cache update not required
 		return False
 
+	# load all Twitter friends as Twitter IDs
 	friends = twitter_api.GetFriendIDs(user_id=twitter_id)
+	
+	# monkey patch the Twitter API instance for our extra methods
+	twitter_api.ShowConnections = types.MethodType(
+									ShowConnections,
+									twitter_api)
+	
+	# using these IDs, query the Twitter API to find the connections,
+	# and filter out the ones where the friendship is mutual
+	connections = twitter_api.ShowConnections(user_ids=friends)
+	mutual = [str(c.id) for c in connections if "followed_by" in c.connections]
 	
 	# remove existing friends from the DB and replace it with new ones
 	TwitterFriendsCache.query.filter_by(
 		twitter_id = twitter_id).delete()
 	for f in friends:
 		t = TwitterFriendsCache(
-			twitter_id = twitter_id,
-			friend_twitter_id = f)
+			twitter_id = str(twitter_id),
+			friend_twitter_id = str(f),
+			is_mutual = (str(f) in mutual))
 		db_session.add(t)
 	
 	return True # will commit
