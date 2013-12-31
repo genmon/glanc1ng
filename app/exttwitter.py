@@ -5,7 +5,42 @@
 # Two new classes: RelationshipUser, Relationship
 # One new method to add to the Api class: ShowFriendships
 
-import simplejson
+import simplejson, time
+
+class ConnectionUser(object):
+	""" Represents a single user with connections """
+	
+	def __init__(self,
+				 id=None,
+				 screen_name=None,
+				 connections=[]):
+		self.id = id
+		self.screen_name = screen_name
+		self.connections = connections
+	
+	@staticmethod
+	def NewFromJsonDict(data):
+		""" Creates a new instance based on a JSON dict """
+		
+		return ConnectionUser(id = data.get('id_str', None),
+							  screen_name = data.get('screen_name', None),
+							  connections = data.get('connections', []))
+	
+	def __str__(self):
+		return self.AsJsonString()
+	
+	def AsJsonString(self):
+		return simplejson.dumps(self.AsDict(), sort_keys=True)
+	
+	def AsDict(self):
+		data = {}
+		if self.id:
+			data['id'] = self.id
+		if self.screen_name:
+			data['screen_name'] = self.screen_name
+		if len(self.connections) > 0:
+			data['connections'] = self.connections
+		return data
 
 class RelationshipUser(object):
 	''' A class representing one of the users in a relationship
@@ -209,3 +244,30 @@ def ShowFriendships(self,
 	data = self._ParseAndCheckTwitter(json.content)
 	#print data
 	return Relationship.NewFromJsonDict(data)
+
+def ShowConnections(self,
+					user_ids=None):
+	url = '%s/friendships/lookup.json' % self.base_url
+	if not self._Api__auth:
+		raise TwitterError("Must be authenticated.")
+	
+	def make_chunks(l, n):
+		return [l[i:i+n] for i in range(0, len(l), n)]
+	
+	if user_ids is not None:
+		#[ [...], [...], [...] ]
+		user_id_chunks = make_chunks(user_ids, 100)
+	else:
+		user_id_chunks = []
+	
+	connections = []
+	
+	for chunk in user_id_chunks:
+		parameters = {'user_id': ",".join([str(u) for u in chunk])}
+		json = self._RequestUrl(url, 'GET', data=parameters)
+		data = self._ParseAndCheckTwitter(json.content)
+		connections += [ConnectionUser.NewFromJsonDict(x) for x in data]
+		sec = self.GetSleepTime('/friendships/lookup')
+		time.sleep(sec)
+
+	return connections

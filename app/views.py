@@ -107,10 +107,12 @@ def register(provider_id=None):
 @app.route("/twitter_friends")
 @login_required
 def twitter_friends():
-	from exttwitter import Relationship, RelationshipUser, ShowFriendships
+	from exttwitter import Relationship, RelationshipUser, ShowFriendships, ConnectionUser, ShowConnections
 	
 	twitter_api = get_provider_or_404('twitter').get_api()
 	twitter_api.ShowFriendships = types.MethodType(ShowFriendships, twitter_api)
+	twitter_api.ShowConnections = types.MethodType(ShowConnections, twitter_api)
+	
 	twitter_conn = app.social.twitter.get_connection()
 	
 	friends = twitter_api.GetFriendIDs(user_id=twitter_conn.provider_user_id)
@@ -120,7 +122,9 @@ def twitter_friends():
 				source_id=twitter_conn.provider_user_id,
 				target_id=friends[0])
 	
-	return render_template("twitter_friends.html", friendship=friendship, twitter_friends=friends)
+	connections = twitter_api.ShowConnections(user_ids=friends)
+	
+	return render_template("twitter_friends.html", friendship=friendship, twitter_friends=friends, connections=connections)
 
 @app.route("/group", methods=['GET', 'POST'])
 @login_required
