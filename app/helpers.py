@@ -50,16 +50,20 @@ def update_twitter_friends_cache(twitter_id=None, twitter_api=None, db_session=N
 	# using these IDs, query the Twitter API to find the connections,
 	# and filter out the ones where the friendship is mutual
 	connections = twitter_api.ShowConnections(user_ids=friends)
-	mutual = [str(c.id) for c in connections if "followed_by" in c.connections]
+	mutual_by_id = dict([(str(c.id), c) for c in connections if "followed_by" in c.connections])
 	
 	# remove existing friends from the DB and replace it with new ones
 	TwitterFriendsCache.query.filter_by(
 		twitter_id = twitter_id).delete()
 	for f in friends:
+		twitter_name = None
+		if mutual_by_id.has_key(str(f)):
+			twitter_name = mutual_by_id[str(f)].screen_name
 		t = TwitterFriendsCache(
 			twitter_id = str(twitter_id),
 			friend_twitter_id = str(f),
-			is_mutual = (str(f) in mutual))
+			is_mutual = mutual_by_id.has_key(str(f)),
+			twitter_name = twitter_name)
 		db_session.add(t)
 	
 	return True # will commit
@@ -288,6 +292,12 @@ def log_unnoticed_glances(receivers=[], db_session=None):
 				receiver_twitter_id=r,
 				when=now)
 		db_session.add(log)
+	
+	#db_session.execute(
+	#	ReceivedUnnoticedGlance.__table__.insert(),
+	#	[{'receiver_twitter_id': r, 'when': now} for r in receivers])
+	
+	return True
 
 def sweep_unnoticed_glances(receivers=[], db_session=None):
 	""" Since we have no background workers, we have to make sure

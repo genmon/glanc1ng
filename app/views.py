@@ -232,7 +232,7 @@ def send_glance():
 	# loads the twitter IDs of receivers who will notice this
 	will_notice_list = helpers.get_reverse_group_as_twitter_ids(
 									user=current_user)
-	print will_notice_list
+	#print will_notice_list
 	glance_is_noticed = lambda r: r in will_notice_list
 
 	# every receiver gets an unnoticed glance
@@ -251,13 +251,13 @@ def send_glance():
 		if glance_is_noticed(receiver_twitter_id):
 			# if the receiver is a registered user and the sender is in the
 			# receiver's group, this glance will be noticed
-			print "%s will notice" % receiver_twitter_id
+			#print "%s will notice" % receiver_twitter_id
 			helpers.log_noticed_glance(
 				sender_twitter_id=sender_twitter_id,
 				receiver_twitter_id=receiver_twitter_id,
 				db_session=db.session)
-		else:
-			print "%s won't notice" % receiver_twitter_id
+		#else:
+		#	print "%s won't notice" % receiver_twitter_id
 
 		if is_mutual:
 			# transitory glances are those glances sent to twitter
