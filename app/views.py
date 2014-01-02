@@ -4,7 +4,7 @@ from flask.ext.social.views import connect_handler
 from flask.ext.social.utils import get_provider_or_404
 from sqlalchemy.sql import func
 
-from forms import AddGroupMemberForm, RemoveGroupMemberForm, DoGlanceForm
+from forms import AddGroupMemberFromTwitterNameForm, RemoveGroupMemberForm, DoGlanceForm
 from models import User, WhoYouLookinAt, Connection, SentGlance, ReceivedNoticedGlance
 
 from . import app, db
@@ -138,21 +138,42 @@ def twitter_friends():
 @app.route("/group", methods=['GET', 'POST'])
 @login_required
 def group():
-	add_form = AddGroupMemberForm()
+	# update the cache of this user's twitter friends
+	commit_required = helpers.update_twitter_friends_cache(
+		twitter_id=helpers.get_twitter_id(user=current_user),
+		twitter_api=get_provider_or_404('twitter').get_api(),
+		db_session=db.session)
+	if commit_required:
+		db.session.commit()
+	
+	# loads the existing group
+	group = current_user.who_they_lookin_at
+	group_names = []
+	if group is not None:
+		group_names = [r.looking_at_twitter_display_name.lower() for r in group]
+	
+	# returns tuple of (id, value)
+	mutual = helpers.get_twitter_mutual_friends(
+				twitter_id=helpers.get_twitter_id(user=current_user))
+	mutual.sort(key=lambda s: s[1].lower())
+	mutual_dict = dict(mutual)
+	add_form = AddGroupMemberFromTwitterNameForm()
+	add_form.twitter_id.choices = mutual
+	
 	remove_form = RemoveGroupMemberForm()
 	if request.method == 'POST' and add_form.validate():
-		test = WhoYouLookinAt.query.filter_by(user_id=current_user.id, looking_at_twitter_display_name=add_form.twitter_display_name.data).first()
-		twitter_conn = app.social.twitter.get_connection()
-		if test is not None:
-			flash('That member is already in your group!', 'error')
-		elif add_form.twitter_display_name.data.lower() == twitter_conn.display_name.lower():
-			flash('You can\'t add yourself!', 'error')
+		if mutual_dict.has_key(add_form.twitter_id.data) is False:
+			flash("That Twitter ID is unknown and can't be added to your group", "error")
+		elif mutual_dict[add_form.twitter_id.data].lower() in group_names:
+			flash("That member is already in your group!", "error")
 		else:
-			new_group_member = WhoYouLookinAt(user_id=current_user.id, looking_at_twitter_display_name=add_form.twitter_display_name.data)
+			new_group_member = WhoYouLookinAt(user_id=current_user.id, looking_at_twitter_display_name=mutual_dict[add_form.twitter_id.data].lower())
 			db.session.add(new_group_member)
 			db.session.commit()
 			flash('You added a member to your group!')
-	return render_template("group.html", lookin_at=current_user.who_they_lookin_at, add_form=add_form, remove_form=remove_form)
+			# reload group
+			group = current_user.who_they_lookin_at
+	return render_template("group.html", lookin_at=group, add_form=add_form, remove_form=remove_form)
 
 @app.route("/group/<member>/remove", methods=['POST'])
 @login_required

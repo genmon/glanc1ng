@@ -5,7 +5,13 @@
 
 <h1>Edit group</h1>
 
-<p>Pay special attention to these people. You'll notice whenever they glance at their Twitter friends (provided you're one of their Twitter friends).</p>
+<p>Pay special attention to these people. Instead of just seeing if they've glanced in the last 24 hours, you'll see exactly when they were active.</p>
+
+<p>And if all of them have been active on Glanc1ng inside the last 60 minutes, you'll be able to one-click* start a conversation with them on Twitter.</p>
+
+<p><em>*okay, it's more like two clicks right now.</em></p>
+
+<p>Group members are chosen from your "mutual followers" on Twitter (people  you follow, who you follow back).</p>
 
 <table class="table">
 	{% for group_member in lookin_at %}
@@ -23,9 +29,11 @@
 		{{ add_form.hidden_tag() }}
 		<tr>
 			<td>
-				{{ add_form.twitter_display_name|safe }}
-				{% if add_form.twitter_display_name.errors %}
-				{% for error in add_form.twitter_display_name.errors %}
+				Mutual followers on Twitter:
+				<br>
+				{{ add_form.twitter_id|safe }}
+				{% if add_form.twitter_id.errors %}
+				{% for error in add_form.twitter_id.errors %}
 				<br><span class="label label-warning">Whoops!</span> {{ error }}
 				{% endfor %}
 				{% endif %}

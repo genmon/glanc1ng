@@ -59,6 +59,8 @@ def update_twitter_friends_cache(twitter_id=None, twitter_api=None, db_session=N
 		twitter_name = None
 		if mutual_by_id.has_key(str(f)):
 			twitter_name = mutual_by_id[str(f)].screen_name
+			if twitter_name is not None:
+				twitter_name = "@" + twitter_name
 		t = TwitterFriendsCache(
 			twitter_id = str(twitter_id),
 			friend_twitter_id = str(f),
@@ -82,7 +84,21 @@ def get_twitter_friends(twitter_id=None):
 	
 	return friends
 
+
+def get_twitter_mutual_friends(twitter_id=None):
+	""" Returns list of (twitter_id, twitter_name) of all mutual friends
+	of this user """
+	friends_q = TwitterFriendsCache.query.filter_by(
+						twitter_id = twitter_id,
+						is_mutual = True).all()
 	
+	if friends_q is None:
+		friends = []
+	else:
+		friends = [(f.friend_twitter_id, f.twitter_name) for f in friends_q]
+	
+	return friends
+
 def log_sent_glance(sender_twitter_id=None, db_session=None):
 	""" Logs that this Twitter ID sent this glance. """
 	
