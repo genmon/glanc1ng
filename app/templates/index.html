@@ -74,15 +74,20 @@
 
 
 	{% if show_group %}
-	<p>Glance again to see if your Twitter followers have glanced more.</p>
+	<p>Glance again to check in on your group and Twitter friends.</p>
 	{% else %}
-	<p>Glance now to see how much your Twitter followers have been glancing.</p>
+	<p>Glance to check in on your group and Twitter friends.</p>
 	{% endif %}
 	
 	<form method="POST" action="{{ url_for('send_glance') }}">
 		{{ glance_form.hidden_tag() }}
 		<button type="submit" class="btn btn-primary">Glance{% if show_group %} again{% endif %}</button>
-	</form>		
+	</form>	
+	
+	{% if not show_group %}
+	<p>&nbsp;</p>
+	<p>Or: <a href="{{ url_for('about') }}">Learn more about Glanc1ng.</a></p>
+	{% endif %}
 	
 	</div>
 </div>
