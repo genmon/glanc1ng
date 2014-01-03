@@ -39,6 +39,7 @@ class User(db.Model, UserMixin):
 	# replaced with a null -- which often results in an error.
 	# So user deletion results in data being deleted!
 	who_they_lookin_at = db.relationship('WhoYouLookinAt', backref=db.backref('user', lazy='joined'), cascade="all")
+	bergcloud_device = db.relationship('BergCloudDevice', backref=db.backref('user', lazy='joined'), cascade="all", uselist=False)
 
 	def __repr__(self):
 		return '<User %r>' % (self.email)
@@ -144,4 +145,11 @@ class TwitterFriendsCache(db.Model):
 	is_mutual = db.Column(db.Boolean(), default=False, nullable=False)
 	twitter_name = db.Column(db.String(255))
 
-
+class BergCloudDevice(db.Model):
+	""" Associates a single BERG Cloud device with a user """
+	
+	__tablename__ = "bergcloud_device"
+	
+	user_id = db.Column(db.Integer, db.ForeignKey('users.id'), primary_key=True)
+	device_address = db.Column(db.String(255), nullable=False)
+	is_online = db.Column(db.Boolean(), default=False, nullable=False)

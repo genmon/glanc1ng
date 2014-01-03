@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}Glanc1ng - BERG Cloud device setup{% endblock %}
+{% block regularpage %}
+
+<h1>Setup BERG Cloud device</h1>
+
+<p>Device address: <strong>
+	{% if device %}
+		{{ device.device_address }}
+	{% else %}
+		No device configured
+	{% endif %}
+</strong></p>
+
+<p>
+New device address:
+</p>
+
+<form method="POST">
+{{ form.hidden_tag() }}
+<p>
+{{ form.device_address|safe }}
+{% if form.device_address.errors %}
+	{% for error in form.device_address.errors %}
+		<br><span class="label label-warning">Whoops!</span> {{ error }}
+	{% endfor %}
+{% endif %}
+<input type="submit" value="Change">
+</form>
+
+<hr>
+
+<form method="POST" action="{{ url_for('bergcloud_test') }}">
+	<input type="submit" value="bergcloud_test">
+</form>
+
+{% endblock %}

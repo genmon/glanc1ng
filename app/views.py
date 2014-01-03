@@ -4,14 +4,15 @@ from flask.ext.social.views import connect_handler
 from flask.ext.social.utils import get_provider_or_404
 from sqlalchemy.sql import func
 
-from forms import AddGroupMemberFromTwitterNameForm, RemoveGroupMemberForm, DoGlanceForm
-from models import User, WhoYouLookinAt, Connection, SentGlance, ReceivedNoticedGlance
+from forms import AddGroupMemberFromTwitterNameForm, RemoveGroupMemberForm, DoGlanceForm, DeviceAddressForm
+from models import User, WhoYouLookinAt, Connection, SentGlance, ReceivedNoticedGlance, BergCloudDevice
 
 from . import app, db
 import helpers
 
 from datetime import datetime
 import types
+import requests
 
 @app.route("/index")
 @app.route("/")
@@ -239,7 +240,6 @@ def send_glance():
 		db_session=db.session)
 	if commit_required:
 		db.session.commit()
-
 	# log the sent glance. note no commit... the next time we commit
 	# is at the end of the function
 	helpers.log_sent_glance(
@@ -363,4 +363,41 @@ def stats():
 	
 	return render_template("about_stats.html", **stats)
 
+@app.route("/bergcloud/setup", methods=['GET', 'POST'])
+@login_required
+def bergcloud_setup():
+	bergcloud_device = current_user.bergcloud_device
+	form = DeviceAddressForm()
 	
+	if request.method == 'POST' and form.validate():
+		if bergcloud_device is None:
+			bergcloud_device = BergCloudDevice(
+				user_id = current_user.id,
+				device_address = form.device_address.data)
+			db.session.add(bergcloud_device)
+		else:
+			bergcloud_device.device_address = form.device_address.data
+			db.session.merge(bergcloud_device)
+		db.session.commit()
+		flash("Device address updated!")
+	
+	return render_template("bergcloud_setup.html", device=bergcloud_device, form=form)
+		
+@app.route("/bergcloud/test", methods=['POST'])
+@login_required
+def bergcloud_test():
+	bergcloud_device = current_user.bergcloud_device
+	
+	if bergcloud_device is None:
+		flash("No BERG Cloud device defined", 'error')
+	else:
+		data = {
+			'address': bergcloud_device.device_address,
+			'payload': "[3]"
+		}
+		url = "http://api.bergcloud.com/v1/projects/dde70d350e771af5b006728e7e590dd6/%s" % 'group-energy'
+		response = requests.post(url, data=data)
+		print response
+		flash("Command sent", 'info')
+	
+	return redirect(url_for('bergcloud_setup'))
